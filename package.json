@@ -1,0 +1,32 @@
+{
+	"name": "vvvyyynet_utils_maplibre",
+	"version": "0.1.0",
+	"description": "Utility Functions for maplibre projects covering basemaps, georeferencing, icons, georeferenced images, toggles and more.",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vvvyyynet/vvvyyynet_utils_maplibre.git"
+	},
+	"keywords": [
+		"utils",
+		"maplibre",
+		"georeferncing",
+		"basemaps"
+	],
+	"author": "Levyn Bürki",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/vvvyyynet/vvvyyynet_utils_maplibre/issues"
+	},
+	"homepage": "https://github.com/vvvyyynet/vvvyyynet_utils_maplibre#readme",
+	"devDependencies": {
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/commit-analyzer": "^13.0.0",
+		"@semantic-release/git": "^10.0.1",
+		"@semantic-release/release-notes-generator": "^14.0.2",
+		"semantic-release": "^24.2.0"
+	}
+}
