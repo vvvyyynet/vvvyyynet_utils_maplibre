@@ -1,5 +1,5 @@
 module.exports = {
-	repositoryUrl: 'https://github.com/vvvyyynet/vvvyyynet_utils_maplibre.git',
+	repositoryUrl: 'git+https://github.com/vvvyyynet/vvvyyynet_utils_maplibre.git',
 
 	branches: [
 		'main', // stable release branch
