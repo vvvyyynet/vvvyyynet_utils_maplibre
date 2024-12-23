@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------
-// Handy utils
+// Useful utils
 import { consoleLogAllLayers } from './utils/consoleLogAllLayers';
 import { getMapPosition } from './utils/getMapPosition';
 import { waitForStyleLoad } from './utils/waitForStyleLoad';
