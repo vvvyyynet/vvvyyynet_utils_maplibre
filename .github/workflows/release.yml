@@ -21,5 +21,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run semantic release
+      - name: Run semantic-release
         run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # Pass GitHub token to semantic-release

@@ -1,4 +1,6 @@
 module.exports = {
+	repositoryUrl: 'https://github.com/vvvyyynet/vvvyyynet_utils_maplibre.git',
+
 	branches: [
 		'main', // stable release branch
 		{ name: 'beta', prerelease: true } // prerelease branch (beta)
