@@ -35,7 +35,18 @@ import { toggleGeoref } from './utils/toggleGeoref';
 import { toggleFeature } from './utils/toggleFeature';
 import { toggleBackgrounds } from './utils/toggleBackgrounds';
 
+//----------------------------------------------
+// FRESHLY ADDED TO UTILS (so they exist as duplicates in JW-Map)
+import { addFeatureGroupsFromDB } from './utils/addFeatureGroupsFromDB';
+import { addStaticFeatures } from './utils/addStaticFeatures';
+import { addLayer } from './utils/addLayer';
+
+// ----------
+// Export
 export {
+	addFeatureGroupsFromDB,
+	addStaticFeatures,
+	addLayer,
 	consoleLogAllLayers,
 	getMapPosition,
 	loadBasemaps,
