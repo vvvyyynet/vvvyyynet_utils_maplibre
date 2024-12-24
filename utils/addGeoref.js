@@ -1,3 +1,5 @@
+import { georef_calculate_bounds } from './georefCalculateBounds';
+import { georef_addToMap } from './georef_addToMap';
 import { GEOREF_TOGGLES } from '$lib/globals/FEATURES.svelte';
 
 export function addGeoref(georef_id, georef_baseURL) {

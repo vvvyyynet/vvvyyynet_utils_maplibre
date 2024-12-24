@@ -1,3 +1,4 @@
+import { toggleFeature } from './toggleFeature';
 import { MAPPING } from '$lib/globals/MAPPING.svelte';
 
 export function toggleBackgrounds(map, force = 'toggle') {

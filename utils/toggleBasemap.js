@@ -1,6 +1,6 @@
 import { MAPPING } from '$lib/globals/MAPPING.svelte';
 import { basemapLayers } from '$lib/globals/TILES.svelte.js';
-
+import { toggleBackgrounds } from './toggleBackgrounds';
 //----------------------------------------------
 // Toggle between first two basemaps
 export function toggleBasemap(force = 'toggle') {

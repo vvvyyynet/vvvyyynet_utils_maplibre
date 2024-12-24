@@ -1,3 +1,4 @@
+import { georef_convertWorldFile_epsg3857_to_bounds } from './georef_convertWorldFile_epsg3857_to_bounds';
 export async function georef_calculate_bounds(imageSrc, worldfileSrc) {
 	// Function to read the worldfile (filename.pgw)
 	async function readWorldFile(file) {
