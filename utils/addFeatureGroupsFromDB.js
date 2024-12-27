@@ -1,3 +1,5 @@
+import {addFeatures} from './addFeatures'
+
 // ----------------------
 // Helper Functions
 function decodeHtmlEntities(str) {
@@ -18,29 +20,22 @@ function decodeHtmlEntities(str) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Add Database Features
-export function addFeatureGroupsFromDB(map, FGs) {
-	// console.log('LETS ADD DB-FEATURES: ', FGs);
+export function addFeatureGroupsFromDB(map, FeatColls) {
+	// console.log('LETS ADD DB-FEATURES: ', FeatColls);
 
 	// Loop through all FeatureGroups
-	FGs.forEach((FG) => {
+	FeatColls.forEach((FeatColl) => {
 		// Load style, groupnames and features
-		var style = JSON.parse(`{${decodeHtmlEntities(FG.style)}}`);
-		var groupNames = JSON.parse(decodeHtmlEntities(FG.groupnames)); //!DEBUG groupNames vs. groupnames (it's a PostgreSQL issue!)
-		var featureCollection = JSON.parse(decodeHtmlEntities(FG.geojson_string));
+		
+		var style = (FeatColl.style) ? JSON.parse(`{${decodeHtmlEntities(FeatColl.style)}}`) : undefined;
+		var groupNames = (FeatColl.groupnames) ? JSON.parse(decodeHtmlEntities(FeatColl.groupnames)) : undefined; //!BEWARE groupNames vs. groupnames (unfortunately, I set up PostgreSQL with unquoted identifiers, so it is caseinsensitive!!)
+		var featureCollection = (FeatColl.geojson_string) ? JSON.parse(decodeHtmlEntities(FeatColl.geojson_string)) : undefined;
+		
 		featureCollection.features.forEach((feature, idx) => {
-			featureCollection.features[idx].properties.title = decodeHtmlEntities(FG.title);
-			featureCollection.features[idx].properties.description = decodeHtmlEntities(FG.description);
+			featureCollection.features[idx].properties.title = decodeHtmlEntities(FeatColl.title);
+			featureCollection.features[idx].properties.description = decodeHtmlEntities(FeatColl.description);
 		});
-		// Add Source
-		const sourceId = `DBFeatureSource-${FG.id}`;
-		map.addSource(sourceId, {
-			type: 'geojson',
-			data: featureCollection
-		});
-		// Add Layers
-		featureCollection.features.forEach((feature, index) => {
-			const layerId = `DBLayer-${FG.id}-${index + 1}`;
-			addLayer(map, feature, sourceId, layerId, style, groupNames);
-		});
+
+		addFeatures(map, featureCollection, {id: FeatColl.id, prefix: 'fromDB', groupNames: groupNames, style: FeatColl.properties.style }); 
 	});
 }

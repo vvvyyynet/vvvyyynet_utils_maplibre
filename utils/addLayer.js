@@ -2,7 +2,16 @@ import maplibregl from 'maplibre-gl';
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add Layer
-export function addLayer(map, FEATURES, feature, sourceId, layerId, style, groupNames, has_glow = false) {
+export function addLayer(
+	map,
+	FEATURES,
+	feature,
+	sourceId,
+	layerId,
+	style = {},
+	groupNames = [],
+	has_glow = false
+) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
 
