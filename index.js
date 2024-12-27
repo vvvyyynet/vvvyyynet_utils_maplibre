@@ -8,6 +8,7 @@ import { waitForStyleLoad } from './utils/waitForStyleLoad';
 // Basemap
 import { loadBasemaps } from './utils/loadBasemaps';
 import { toggleBasemap } from './utils/toggleBasemap';
+import { minimalStyle } from './utils/minimalStyle';
 
 //-------------------------------------------------------------------
 // Georeferencing
@@ -65,5 +66,6 @@ export {
 	toggleAllOff,
 	toggleGeoref,
 	toggleFeature,
-	toggleBackgrounds
+	toggleBackgrounds,
+	minimalStyle
 };
