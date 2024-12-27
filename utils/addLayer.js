@@ -1,9 +1,8 @@
-import { FEATURES } from '$lib/globals/FEATURES.svelte.js';
 import maplibregl from 'maplibre-gl';
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add Layer
-export function addLayer(map, feature, sourceId, layerId, style, groupNames, has_glow = false) {
+export function addLayer(map, FEATURES, feature, sourceId, layerId, style, groupNames, has_glow = false) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
 
@@ -228,6 +227,8 @@ export function addLayer(map, feature, sourceId, layerId, style, groupNames, has
 	// -------------------------------------------
 	// Make layer interactive
 	makeLayerInteractive(map, layerId);
+
+	return FEATURES;
 }
 
 // ---------------------------------------------------------------
