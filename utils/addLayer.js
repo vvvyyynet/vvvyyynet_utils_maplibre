@@ -4,7 +4,9 @@ import maplibregl from 'maplibre-gl';
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////////////////
 function getFromStyle(style, name) {
-	return style[name] !== undefined ? style[name] : null;
+	//! BEWARE: what was this undefined-replacement for? (before it was even more explicit, replacing undefined with null)
+	// may have to do sth with maplibregl erroring out on undefined... I had this but could not reproduce.
+	return (style[name] = style[name] ?? null); // replace undefined with null
 }
 
 function getDash(feature, style) {
@@ -88,8 +90,32 @@ export function addLayer(
 	layerId,
 	style = {},
 	groupNames = [],
-	has_glow = false,
-	default_iconName = 'dot'
+	linesStyle = {
+		hasGlow: false
+	},
+	pointsStyle = {
+		type: 'circle', // 'icon' || 'circle'
+		setInvisible: false,
+		circleStyle: {
+			circleRadius: undefined,
+			circleColor: undefined,
+			circleStrokeColor: undefined,
+			circleStrokeWidth: undefined
+		},
+		iconStyle: {
+			hasIconBackdrop: false,
+			forcedIconName: undefined,
+			fallbackIconName: undefined,
+			//! BEWARE: currently, fallbackIconName only jumps in if no other iconName is provided, but it will not render in case of a type, e.g. in forcedIconName
+			iconBackdropStyle: {
+				setInvisible: false,
+				circleRadius: undefined,
+				circleColor: undefined,
+				circleStrokeColor: undefined,
+				circleStrokeWidth: undefined
+			}
+		}
+	}
 ) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
@@ -119,64 +145,80 @@ export function addLayer(
 	// Points
 	// --------------------------------------
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
-		// Add background circle
-		map.addLayer({
-			id: `${layerId}-background`,
-			type: 'circle',
-			source: sourceId,
-			metadata: {
-				groupNames: groupNames
-			},
-			layout: {
-				visibility: 'visible' // Hidden by default
-			},
-			paint: {
-				'circle-radius': 18,
-				'circle-color': 'white',
-				'circle-stroke-color': '#000000',
-				'circle-stroke-width': 1
-			}
-			// filter: ['==', ['get', 'id'], feature.properties.id]
-		});
+		pointsStyle.type = pointsStyle?.type ?? 'circle'; // fallback
+		switch (pointsStyle.type) {
+			// Add simple circles
+			case 'circle':
+				map.addLayer({
+					id: layerId,
+					type: 'circle',
+					source: sourceId,
+					layout: {
+						visibility: pointsStyle?.setInvisible ? 'none' : 'visible'
+					},
+					paint: {
+						'circle-radius': pointsStyle?.circleStyle?.circleRadius || 10,
+						'circle-color': pointsStyle?.circleStyle?.circleColor || 'red',
+						'circle-stroke-color': pointsStyle?.circleStyle?.circleStrokeColor || 'black',
+						'circle-stroke-width': pointsStyle?.circleStyle?.circleStrokeWidth || 1
+					}
+					// filter: ['==', ['get', 'id'], feature.properties.id]
+				});
+				break;
+			case 'icon':
+				// Add backdrop circle
+				if (pointsStyle?.iconStyle?.hasIconBackdrop) {
+					map.addLayer({
+						id: `${layerId}-background`,
+						type: 'circle',
+						source: sourceId,
+						metadata: {
+							groupNames: groupNames
+						},
+						layout: {
+							visibility: pointsStyle?.iconStyle?.iconBackdropStyle?.setInvisible
+								? 'none'
+								: 'visible'
+						},
+						paint: {
+							'circle-radius': pointsStyle?.iconStyle?.iconBackdropStyle?.circleRadius || 18,
+							'circle-color': pointsStyle?.iconStyle?.iconBackdropStyle?.circleColor || 'white',
+							'circle-stroke-color':
+								pointsStyle?.iconStyle?.iconBackdropStyle?.circleStrokeColor || '#000000',
+							'circle-stroke-width':
+								pointsStyle?.iconStyle?.iconBackdropStyle?.circleStrokeWidth || 1
+						}
+						// filter: ['==', ['get', 'id'], feature.properties.id]
+					});
+				}
 
-		// Add simple circles (for debugging)
-		// map.addLayer({
-		// 	id: layerId,
-		// 	type: 'circle',
-		// 	source: sourceId,
-		// 	paint: {
-		// 		'circle-radius': 6, // Size of the circle
-		// 		'circle-color': '#FF0000' // Color of the circle
-		// 	}
-		// filter: ['==', ['get', 'id'], feature.properties.id]
-		// });
-
-		// Add custom icon
-		map.addLayer({
-			id: layerId,
-			type: 'symbol',
-			source: sourceId,
-			metadata: {
-				groupNames: groupNames
-			},
-			layout: {
-				visibility: 'visible',
-				// visibility: 'none', // Hidden by default
-				'icon-image': [
-					'coalesce',
-					['get', 'iconName'],
-					getFromStyle(style, 'iconName') || default_iconName
-				], // Note: icons must be added to map
-				'icon-size': ['coalesce', ['get', 'iconSize'], getFromStyle(style, 'iconSize') || 0.02],
-				'icon-anchor': 'center',
-				'icon-overlap': 'cooperative',
-				'text-field': ['get', 'comment'],
-				'text-offset': [0, 1.25],
-				'text-anchor': 'top'
-				// 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-			}
-			// filter: ['==', ['get', 'id'], feature.properties.id]
-		});
+				// Add custom icon
+				map.addLayer({
+					id: layerId,
+					type: 'symbol',
+					source: sourceId,
+					metadata: {
+						groupNames: groupNames
+					},
+					layout: {
+						visibility: pointsStyle?.setInvisible ? 'none' : 'visible',
+						'icon-image': pointsStyle?.iconStyle?.forcedIconName || [
+							'coalesce',
+							['get', 'iconName'],
+							getFromStyle(style, 'iconName') || pointsStyle?.iconStyle?.fallbackIconName
+						], // Note: icons must be added to map
+						'icon-size': ['coalesce', ['get', 'iconSize'], getFromStyle(style, 'iconSize') || 0.02],
+						'icon-anchor': 'center',
+						'icon-overlap': 'cooperative',
+						'text-field': ['get', 'comment'],
+						'text-offset': [0, 1.25],
+						'text-anchor': 'top'
+						// 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+					}
+					// filter: ['==', ['get', 'id'], feature.properties.id]
+				});
+				break;
+		}
 
 		FEATURES.allLoaded_layerIds.push(layerId);
 		FEATURES.allLoadedPoints_layerIds.push(`${layerId}-background`);
@@ -189,9 +231,9 @@ export function addLayer(
 		// Lines
 		// --------------------------------------
 	} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
-		function addLine(id, has_glow = false) {
-			const lineWidthFactor = has_glow ? 2.5 : 1; //!DEBUG may not work with linewidth from style!
-			const lineBlur = has_glow ? 14 : 0;
+		function addLine(id, hasGlow = false) {
+			const lineWidthFactor = hasGlow ? 2.5 : 1; //!DEBUG may not work with linewidth from style!
+			const lineBlur = hasGlow ? 14 : 0;
 
 			map.addLayer({
 				id: id,
@@ -227,14 +269,14 @@ export function addLayer(
 				// filter: ['==', ['get', 'id'], feature.properties.id]
 			});
 			// make sure glow is not dashed
-			if (has_glow) {
+			if (linesStyle?.hasGlow) {
 				map.setPaintProperty(id, 'line-dasharray', null);
 			}
 		}
 		// add with glow
 		addLine(layerId, false);
 		FEATURES.allLoaded_layerIds.push(layerId);
-		if (has_glow) {
+		if (linesStyle?.hasGlow) {
 			const glow_id = `${layerId}-glow`;
 			addLine(glow_id, true);
 			FEATURES.allLoaded_layerIds.push(glow_id);

@@ -8,7 +8,8 @@ export function addFeatures(
 		id_prefix = undefined,
 		groupNames = undefined,
 		style = undefined,
-		default_iconName = undefined
+		linesStyle = undefined,
+		pointsStyle = undefined
 	}
 ) {
 	// Function Arguments
@@ -37,17 +38,6 @@ export function addFeatures(
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
-		const has_glow = feature.metadata?.has_glow || false;
-		addLayer(
-			map,
-			FEATURES,
-			feature,
-			sourceId,
-			layerId,
-			style,
-			groupNames,
-			has_glow,
-			default_iconName
-		);
+		addLayer(map, FEATURES, feature, sourceId, layerId, style, groupNames, linesStyle, pointsStyle);
 	});
 }
