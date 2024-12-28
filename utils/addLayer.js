@@ -71,11 +71,11 @@ function makeLayerInteractive(map, layerId) {
 	});
 
 	map.on('mouseenter', layerId, () => {
-		map.getCanvas().geoJSONStyle.cursor = 'pointer';
+		map.getCanvas().style.cursor = 'pointer';
 	});
 
 	map.on('mouseleave', layerId, () => {
-		map.getCanvas().geoJSONStyle.cursor = '';
+		map.getCanvas().style.cursor = '';
 	});
 }
 
@@ -93,6 +93,8 @@ export function addLayer(
 	linesStyle = {
 		// manual styling (values post-fixed with Force will win over geoJSONStyle)
 		setInvisible: false,
+		lineColor: 'red',
+		lineColorForce: 'red',
 		isDotted: false,
 		lineBlur: 5,
 		lineWidth: 5,
@@ -101,7 +103,7 @@ export function addLayer(
 		lineWidthAtZoom16: 5,
 		hasGlow: false,
 		glowStyle: {
-			lineWidthFactor: 2.5,
+			lineWidthFactor: 5,
 			lineBlur: 5
 		},
 		isGlow: false // will be set programmatically, not intended for outside use
@@ -263,10 +265,15 @@ export function addLayer(
 		// Lines
 		// --------------------------------------
 	} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
+		console.log('LINE: ', linesStyle);
+
 		// CHECK GLOW AND RE-RUN addLayer
 		if (linesStyle?.hasGlow) {
+			let linesStyleOfGlow = { ...linesStyle }; // shallow copy is important!
 			linesStyleOfGlow.hasGlow = false;
 			linesStyleOfGlow.isGlow = true;
+
+			//
 			addLayer(
 				map,
 				feature,
@@ -278,24 +285,18 @@ export function addLayer(
 				linesStyleOfGlow,
 				pointsStyle
 			);
-		} else if (linesStyle?.isGlow) {
-			addLayer(
-				map,
-				feature,
-				FEATURES,
-				sourceId,
-				layerId,
-				geoJSONStyle,
-				groupNames,
-				linesStyleOfGlow,
-				pointsStyle
-			);
+
+			// before continuing, make sure isGlow is false for normal line
+			linesStyle.isGlow = false;
 		}
 
-		const lineWidthFactor = linesStyle?.isGlow ? linesStyle?.glowStyle?.lineWidthFactor : 1; // glow must be wider
-		console.log('LINE: ', linesStyle?.lineWidthForce * lineWidthFactor, lineWidthFactor);
+		const lineWidthFactor = linesStyle?.isGlow ? linesStyle?.glowStyle?.lineWidthFactor || 2.5 : 1; // glow must be wider
+		const layerIdGlow = `${layerId}-glow`;
+
+		console.log(linesStyle?.isGlow, linesStyle?.lineWidthForce, lineWidthFactor);
+
 		map.addLayer({
-			id: linesStyle?.isGlow ? `${layerId}-glow` : layerId,
+			id: linesStyle?.isGlow ? layerIdGlow : layerId,
 			type: 'line',
 			source: sourceId,
 			metadata: {
@@ -307,10 +308,10 @@ export function addLayer(
 				// 'line-cap': 'round'
 			},
 			paint: {
-				'line-color': [
+				'line-color': linesStyle?.lineColorForce || [
 					'coalesce',
 					['get', 'lineColor'],
-					getFromStyle(geoJSONStyle, 'lineColor') || 'red'
+					getFromStyle(geoJSONStyle, 'lineColor') || linesStyle?.lineColor || 'red'
 				],
 				'line-width':
 					linesStyle?.lineWidthForce * lineWidthFactor ||
@@ -332,9 +333,11 @@ export function addLayer(
 			}
 			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
-		// make sure glow is not dashed
-		if (linesStyle?.hasGlow) {
-			map.setPaintProperty(id, 'line-dasharray', null);
+
+		// Adjustments
+		// Make sure glow is not dashed
+		if (linesStyle?.isGlow) {
+			map.setPaintProperty(layerIdGlow, 'line-dasharray', null);
 		}
 
 		// PUSH TO FEATURES
