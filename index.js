@@ -47,6 +47,10 @@ import { toggleFeature } from './utils/toggleFeature';
 import { toggleBackgrounds } from './utils/toggleBackgrounds';
 
 //----------------------------------------------
+// Tests
+import { test_addFeatures } from './test/test_addFeatures';
+
+//----------------------------------------------
 // Legacy (JW-Map)
 import { addFeatureGroupsFromDB } from './utils/addFeatureGroupsFromDB';
 import { addStaticFeatures } from './utils/addStaticFeatures';
@@ -58,6 +62,7 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 // ----------
 // Export
 export {
+	test_addFeatures,
 	drawTestFeatures,
 	drawTestPoints,
 	drawTestLines,
