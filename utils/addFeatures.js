@@ -2,7 +2,14 @@ import { addLayer } from './addLayer';
 export function addFeatures(
 	map,
 	FeatColl,
-	{ id = undefined, id_prefix = undefined, groupNames = undefined, style = undefined }
+	FEATURES,
+	{
+		id = undefined,
+		id_prefix = undefined,
+		groupNames = undefined,
+		style = undefined,
+		default_iconName = undefined
+	}
 ) {
 	// Function Arguments
 	// - map
@@ -30,8 +37,17 @@ export function addFeatures(
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
-		console.log(layerId);
 		const has_glow = feature.metadata?.has_glow || false;
-		addLayer(map, feature, sourceId, layerId, style, groupNames, has_glow);
+		addLayer(
+			map,
+			FEATURES,
+			feature,
+			sourceId,
+			layerId,
+			style,
+			groupNames,
+			has_glow,
+			default_iconName
+		);
 	});
 }

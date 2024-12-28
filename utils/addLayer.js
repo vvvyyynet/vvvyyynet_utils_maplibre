@@ -10,10 +10,17 @@ export function addLayer(
 	layerId,
 	style = {},
 	groupNames = [],
-	has_glow = false
+	has_glow = false,
+	default_iconName = 'dot'
 ) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
+
+	// Test for missing id
+	if (!layerId) {
+		console.warn('missing layerId detected: ', feature);
+		return;
+	}
 
 	// Test for duplicate layers
 	if (map.getLayer(layerId)) {
@@ -23,16 +30,6 @@ export function addLayer(
 	// Test for nullis features
 	if (!feature) {
 		console.warn('nullish feature detected : ', layerId, feature);
-		return;
-	}
-
-	// Test for missing id
-	if (!(feature.properties && feature.properties.id)) {
-		console.warn(
-			'missing featureId detected (please add it to feature.properties.id) : ',
-			layerId,
-			feature
-		);
 		return;
 	}
 
@@ -53,16 +50,28 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: 'none' // Hidden by default
+				visibility: 'visible' // Hidden by default
 			},
 			paint: {
-				'circle-radius': ['case', ['!=', ['get', 'iconName'], 'dot'], 18, 10],
+				'circle-radius': 18,
 				'circle-color': 'white',
 				'circle-stroke-color': '#000000',
 				'circle-stroke-width': 1
-			},
-			filter: ['==', ['get', 'id'], feature.properties.id]
+			}
+			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
+
+		// Add simple circles (for debugging)
+		// map.addLayer({
+		// 	id: layerId,
+		// 	type: 'circle',
+		// 	source: sourceId,
+		// 	paint: {
+		// 		'circle-radius': 6, // Size of the circle
+		// 		'circle-color': '#FF0000' // Color of the circle
+		// 	}
+		// filter: ['==', ['get', 'id'], feature.properties.id]
+		// });
 
 		// Add custom icon
 		map.addLayer({
@@ -73,8 +82,13 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: 'none', // Hidden by default
-				'icon-image': ['coalesce', ['get', 'iconName'], getFromStyle(style, 'iconName') || 'dot'], // Note: icons must be added to map
+				visibility: 'visible',
+				// visibility: 'none', // Hidden by default
+				'icon-image': [
+					'coalesce',
+					['get', 'iconName'],
+					getFromStyle(style, 'iconName') || default_iconName
+				], // Note: icons must be added to map
 				'icon-size': ['coalesce', ['get', 'iconSize'], getFromStyle(style, 'iconSize') || 0.02],
 				'icon-anchor': 'center',
 				'icon-overlap': 'cooperative',
@@ -82,15 +96,15 @@ export function addLayer(
 				'text-offset': [0, 1.25],
 				'text-anchor': 'top'
 				// 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-			},
-			filter: ['==', ['get', 'id'], feature.properties.id]
+			}
+			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
 		FEATURES.allLoaded_layerIds.push(layerId);
 		FEATURES.allLoadedPoints_layerIds.push(`${layerId}-background`);
 		FEATURES.allLoadedPoints_Ids.push({
 			source: sourceId,
-			id: feature.properties.id
+			id: layerId
 		});
 
 		// --------------------------------------
@@ -131,8 +145,8 @@ export function addLayer(
 					'line-opacity': getFromStyle(style, 'lineOpacity') || 1,
 					'line-blur': lineBlur,
 					'line-dasharray': getDash(feature, style)
-				},
-				filter: ['==', ['get', 'id'], feature.properties.id]
+				}
+				// filter: ['==', ['get', 'id'], feature.properties.id]
 			});
 			// make sure glow is not dashed
 			if (has_glow) {
@@ -173,7 +187,7 @@ export function addLayer(
 				'fill-opacity': 0.5,
 				'fill-antialias': true // to on the safe side
 			},
-			filter: ['==', ['get', 'id'], feature.properties.id],
+			// filter: ['==', ['get', 'id'], feature.properties.id]
 			maxzoom: 20 // Adjust this depending on your use case
 		});
 		map.addLayer({
@@ -202,8 +216,8 @@ export function addLayer(
 					6
 				],
 				'line-opacity': 1
-			},
-			filter: ['==', ['get', 'id'], feature.properties.id]
+			}
+			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 		FEATURES.allLoaded_layerIds.push(layerId);
 		FEATURES.allLoaded_layerIds.push(layerIdContour);
@@ -227,8 +241,8 @@ export function addLayer(
 			},
 			layout: {
 				visibility: 'none' // Hidden by default
-			},
-			filter: ['==', ['get', 'id'], feature.properties.id]
+			}
+			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 		FEATURES.allLoaded_layerIds.push(layerId);
 	}
@@ -236,10 +250,6 @@ export function addLayer(
 	// -------------------------------------------
 	// Make layer interactive
 	makeLayerInteractive(map, layerId);
-
-	return FEATURES;
-}
-
 // ---------------------------------------------------------------
 // Helper Functions
 // ---------------------------------------------------------------
