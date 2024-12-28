@@ -1,4 +1,5 @@
-export function drawTestdots(map) {
+export function drawTestPoints(map) {
+  console.log('DRAWING TEST DOTS')
 map.addSource('mypoints', {
   type: 'geojson',
   data: {
@@ -25,7 +26,7 @@ map.addSource('mypoints', {
 
 // Add a simple circle layer to display the points
 map.addLayer({
-  id: 'point-layer',
+  id: 'myTestPoints',
   type: 'circle',
   source: 'mypoints',
   paint: {

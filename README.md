@@ -34,8 +34,8 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - fix: move imports of CAPITALISED GLOBALS like FEATURES etc. to function arguments
 - fix: improve the checks and fallbacks inside addLayer for the various nested stylings
 - refactor: consider moving points_style inside style alltogether
-- feat: appart from 'circle'... are there any other maplibregl-default icons?
 
 ### Features
+- feat: appart from 'circle'... are there any other maplibregl-default icons?
 
 ### Chore and Refactor

@@ -138,13 +138,18 @@ export function addLayer(
 	}
 
 	// ---------------------------------------------------------------------------------------
+	// CHECK FEATURE TYPE
+	const featureType = feature?.geometry?.type;
+	console.log('FEATURE TYPE: ', featureType);
+
+	// ---------------------------------------------------------------------------------------
 	// ADD LAYER
-	const featureType = feature.geometry ? feature.geometry.type : undefined;
 
 	// --------------------------------------
 	// Points
 	// --------------------------------------
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
+		console.log('FEATURE TYPE (point): ', featureType);
 		pointsStyle.type = pointsStyle?.type ?? 'circle'; // fallback
 		switch (pointsStyle.type) {
 			// Add simple circles

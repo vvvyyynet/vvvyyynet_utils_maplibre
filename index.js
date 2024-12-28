@@ -3,7 +3,11 @@
 import { consoleLogAllLayers } from './utils/consoleLogAllLayers';
 import { getMapPosition } from './utils/getMapPosition';
 import { waitForStyleLoad } from './utils/waitForStyleLoad';
-import { drawTestdots } from './utils/drawTestdots';
+
+//  Hardcoded testing features (will add Source and Layer *directly*!!)
+import { drawTestPoints } from './utils/drawTestPoints'; //! NEW
+import { drawTestLines } from './utils/drawTestLines'; //! NEW
+import { drawTestFeatures } from './utils/drawTestFeatures'; //! NEW
 
 //-------------------------------------------------------------------
 // Basemap
@@ -54,7 +58,9 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 // ----------
 // Export
 export {
-	drawTestdots,
+	drawTestFeatures,
+	drawTestPoints,
+	drawTestLines,
 	addFeatures,
 	addFeatureGroupsFromDB,
 	addStaticFeatures,
