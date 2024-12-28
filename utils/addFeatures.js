@@ -2,12 +2,12 @@ import { addLayer } from './addLayer';
 export function addFeatures(
 	map,
 	FeatColl,
-	FEATURES,
 	{
+		FEATURES = undefined,
 		id = undefined,
 		id_prefix = undefined,
 		groupNames = undefined,
-		style = undefined,
+		geoJSONStyle = undefined,
 		linesStyle = undefined,
 		pointsStyle = undefined
 	}
@@ -38,6 +38,16 @@ export function addFeatures(
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
-		addLayer(map, FEATURES, feature, sourceId, layerId, style, groupNames, linesStyle, pointsStyle);
+		addLayer(
+			map,
+			feature,
+			FEATURES,
+			sourceId,
+			layerId,
+			geoJSONStyle,
+			groupNames,
+			linesStyle,
+			pointsStyle
+		);
 	});
 }

@@ -3,14 +3,14 @@ import maplibregl from 'maplibre-gl';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////////////////
-function getFromStyle(style, name) {
+function getFromStyle(geoJSONStyle, name) {
 	//! BEWARE: what was this undefined-replacement for? (before it was even more explicit, replacing undefined with null)
 	// may have to do sth with maplibregl erroring out on undefined... I had this but could not reproduce.
-	return (style[name] = style[name] ?? null); // replace undefined with null
+	return (geoJSONStyle[name] = geoJSONStyle[name] ?? null); // replace undefined with null
 }
 
-function getDash(feature, style) {
-	return feature.properties.is_dashed || style.is_dashed ? [1, 1] : [1, 0];
+function getDash(feature, geoJSONStyle) {
+	return feature.properties.is_dashed || geoJSONStyle.is_dashed ? [1, 1] : [1, 0];
 }
 
 function makeLayerInteractive(map, layerId) {
@@ -71,11 +71,11 @@ function makeLayerInteractive(map, layerId) {
 	});
 
 	map.on('mouseenter', layerId, () => {
-		map.getCanvas().style.cursor = 'pointer';
+		map.getCanvas().geoJSONStyle.cursor = 'pointer';
 	});
 
 	map.on('mouseleave', layerId, () => {
-		map.getCanvas().style.cursor = '';
+		map.getCanvas().geoJSONStyle.cursor = '';
 	});
 }
 
@@ -84,14 +84,27 @@ function makeLayerInteractive(map, layerId) {
 //////////////////////////////////////////////////////////////////////////////////////////
 export function addLayer(
 	map,
-	FEATURES,
 	feature,
+	FEATURES = undefined,
 	sourceId,
 	layerId,
-	style = {},
+	geoJSONStyle = {}, // styling as read from geoJSON
 	groupNames = [],
 	linesStyle = {
-		hasGlow: false
+		// manual styling (values post-fixed with Force will win over geoJSONStyle)
+		setInvisible: false,
+		isDotted: false,
+		lineBlur: 5,
+		lineWidth: 5,
+		lineWidthForce: 4,
+		lineWidthAtZoom0: 2,
+		lineWidthAtZoom16: 5,
+		hasGlow: false,
+		glowStyle: {
+			lineWidthFactor: 2.5,
+			lineBlur: 5
+		},
+		isGlow: false // will be set programmatically, not intended for outside use
 	},
 	pointsStyle = {
 		type: 'circle', // 'icon' || 'circle'
@@ -104,9 +117,9 @@ export function addLayer(
 		},
 		iconStyle: {
 			hasIconBackdrop: false,
-			forcedIconName: undefined,
-			fallbackIconName: undefined,
-			//! BEWARE: currently, fallbackIconName only jumps in if no other iconName is provided, but it will not render in case of a type, e.g. in forcedIconName
+			iconNameForce: undefined,
+			iconName: undefined,
+			//! BEWARE: currently, iconName only jumps in if no other iconName is provided, but it will not render in case of a type, e.g. in iconNameForce
 			iconBackdropStyle: {
 				setInvisible: false,
 				circleRadius: undefined,
@@ -119,7 +132,6 @@ export function addLayer(
 ) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
-
 	// Test for missing id
 	if (!layerId) {
 		console.warn('missing layerId detected: ', feature);
@@ -149,8 +161,10 @@ export function addLayer(
 	// Points
 	// --------------------------------------
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
-		console.log('FEATURE TYPE (point): ', featureType);
 		pointsStyle.type = pointsStyle?.type ?? 'circle'; // fallback
+
+		console.log('LINE: ', sourceId, layerId);
+
 		switch (pointsStyle.type) {
 			// Add simple circles
 			case 'circle':
@@ -207,12 +221,16 @@ export function addLayer(
 					},
 					layout: {
 						visibility: pointsStyle?.setInvisible ? 'none' : 'visible',
-						'icon-image': pointsStyle?.iconStyle?.forcedIconName || [
+						'icon-image': pointsStyle?.iconStyle?.iconNameForce || [
 							'coalesce',
 							['get', 'iconName'],
-							getFromStyle(style, 'iconName') || pointsStyle?.iconStyle?.fallbackIconName
+							getFromStyle(geoJSONStyle, 'iconName') || pointsStyle?.iconStyle?.iconName
 						], // Note: icons must be added to map
-						'icon-size': ['coalesce', ['get', 'iconSize'], getFromStyle(style, 'iconSize') || 0.02],
+						'icon-size': [
+							'coalesce',
+							['get', 'iconSize'],
+							getFromStyle(geoJSONStyle, 'iconSize') || 0.02
+						],
 						'icon-anchor': 'center',
 						'icon-overlap': 'cooperative',
 						'text-field': ['get', 'comment'],
@@ -225,66 +243,110 @@ export function addLayer(
 				break;
 		}
 
-		FEATURES.allLoaded_layerIds.push(layerId);
-		FEATURES.allLoadedPoints_layerIds.push(`${layerId}-background`);
-		FEATURES.allLoadedPoints_Ids.push({
-			source: sourceId,
-			id: layerId
-		});
+		// PUSH TO FEATURES
+		if (FEATURES) {
+			if (FEATURES.allLoaded_layerIds) {
+				FEATURES.allLoaded_layerIds.push(layerId);
+			}
+			if (FEATURES.allLoadedPoints_layerIds) {
+				FEATURES.allLoadedPoints_layerIds.push(`${layerId}-background`);
+			}
+			if (FEATURES.allLoadedPoints_Ids) {
+				FEATURES.allLoadedPoints_Ids.push({
+					source: sourceId,
+					id: layerId
+				});
+			}
+		}
 
 		// --------------------------------------
 		// Lines
 		// --------------------------------------
 	} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
-		function addLine(id, hasGlow = false) {
-			const lineWidthFactor = hasGlow ? 2.5 : 1; //!DEBUG may not work with linewidth from style!
-			const lineBlur = hasGlow ? 14 : 0;
+		// CHECK GLOW AND RE-RUN addLayer
+		if (linesStyle?.hasGlow) {
+			linesStyleOfGlow.hasGlow = false;
+			linesStyleOfGlow.isGlow = true;
+			addLayer(
+				map,
+				feature,
+				FEATURES,
+				sourceId,
+				layerId,
+				geoJSONStyle,
+				groupNames,
+				linesStyleOfGlow,
+				pointsStyle
+			);
+		} else if (linesStyle?.isGlow) {
+			addLayer(
+				map,
+				feature,
+				FEATURES,
+				sourceId,
+				layerId,
+				geoJSONStyle,
+				groupNames,
+				linesStyleOfGlow,
+				pointsStyle
+			);
+		}
 
-			map.addLayer({
-				id: id,
-				type: 'line',
-				source: sourceId,
-				metadata: {
-					groupNames: groupNames
-				},
-				layout: {
-					visibility: 'none' // Hidden by default
-					// 'line-join': 'round',
-					// 'line-cap': 'round'
-				},
-				paint: {
-					'line-color': [
-						'coalesce',
-						['get', 'lineColor'],
-						getFromStyle(style, 'lineColor') || 'green'
-					],
-					'line-width': getFromStyle(style, 'lineWidth') || [
+		const lineWidthFactor = linesStyle?.isGlow ? linesStyle?.glowStyle?.lineWidthFactor : 1; // glow must be wider
+		console.log('LINE: ', linesStyle?.lineWidthForce * lineWidthFactor, lineWidthFactor);
+		map.addLayer({
+			id: linesStyle?.isGlow ? `${layerId}-glow` : layerId,
+			type: 'line',
+			source: sourceId,
+			metadata: {
+				groupNames: groupNames
+			},
+			layout: {
+				visibility: linesStyle.setInvisible ? 'none' : 'visible'
+				// 'line-join': 'round',
+				// 'line-cap': 'round'
+			},
+			paint: {
+				'line-color': [
+					'coalesce',
+					['get', 'lineColor'],
+					getFromStyle(geoJSONStyle, 'lineColor') || 'red'
+				],
+				'line-width':
+					linesStyle?.lineWidthForce * lineWidthFactor ||
+					getFromStyle(geoJSONStyle, 'lineWidth') || [
 						'interpolate',
 						['linear'],
 						['zoom'],
 						0,
-						2 * lineWidthFactor,
+						(linesStyle?.lineWidthAtZoom0 || 4) * lineWidthFactor,
 						16,
-						5 * lineWidthFactor
-					],
-					'line-opacity': getFromStyle(style, 'lineOpacity') || 1,
-					'line-blur': lineBlur,
-					'line-dasharray': getDash(feature, style)
-				}
-				// filter: ['==', ['get', 'id'], feature.properties.id]
-			});
-			// make sure glow is not dashed
-			if (linesStyle?.hasGlow) {
-				map.setPaintProperty(id, 'line-dasharray', null);
+						(linesStyle?.lineWidthAtZoom16 || 8) * lineWidthFactor
+					] ||
+					linesStyle?.lineWidth * lineWidthFactor,
+				'line-opacity': getFromStyle(geoJSONStyle, 'lineOpacity') || linesStyle?.lineOpacity || 1,
+				'line-blur': linesStyle?.isGlow
+					? linesStyle?.glowStyle?.lineBlur || 5
+					: linesStyle?.lineBlur || 0,
+				'line-dasharray': getDash(feature, geoJSONStyle) || linesStyle?.lineDashArray || [1, 0]
 			}
-		}
-		// add with glow
-		addLine(layerId, false);
-		FEATURES.allLoaded_layerIds.push(layerId);
+			// filter: ['==', ['get', 'id'], feature.properties.id]
+		});
+		// make sure glow is not dashed
 		if (linesStyle?.hasGlow) {
-			const glow_id = `${layerId}-glow`;
-			addLine(glow_id, true);
-			FEATURES.allLoaded_layerIds.push(glow_id);
+			map.setPaintProperty(id, 'line-dasharray', null);
+		}
+
+		// PUSH TO FEATURES
+		if (FEATURES) {
+			if (FEATURES.allLoaded_layerIds) {
+				FEATURES.allLoaded_layerIds.push(layerId);
+				if (linesStyle?.hasGlow) {
+					const glow_id = `${layerId}-glow`;
+					addLine(glow_id, true);
+					FEATURES.allLoaded_layerIds.push(glow_id);
+				}
+			}
 		}
 
 		// --------------------------------------
@@ -306,7 +368,7 @@ export function addLayer(
 				'fill-color': [
 					'coalesce',
 					['get', 'fillColor'],
-					getFromStyle(style, 'fillColor') || 'yellow'
+					getFromStyle(geoJSONStyle, 'fillColor') || 'yellow'
 				],
 				'fill-pattern': 'red-striped-pattern',
 				'fill-opacity': 0.5,
@@ -329,7 +391,7 @@ export function addLayer(
 				'line-color': [
 					'coalesce',
 					['get', 'lineColor'],
-					getFromStyle(style, 'lineColor') || 'darkblue'
+					getFromStyle(geoJSONStyle, 'lineColor') || 'darkblue'
 				],
 				'line-width': [
 					'interpolate',
@@ -344,8 +406,14 @@ export function addLayer(
 			}
 			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
-		FEATURES.allLoaded_layerIds.push(layerId);
-		FEATURES.allLoaded_layerIds.push(layerIdContour);
+
+		// PUSH TO FEATURES
+		if (FEATURES) {
+			if (FEATURES.allLoaded_layerIds) {
+				FEATURES.allLoaded_layerIds.push(layerId);
+				FEATURES.allLoaded_layerIds.push(layerIdContour);
+			}
+		}
 
 		// --------------------------------------
 		// Circles
@@ -361,7 +429,7 @@ export function addLayer(
 			},
 			paint: {
 				'circle-radius': feature.properties.radius,
-				'circle-color': style.color || '#f30',
+				'circle-color': geoJSONStyle.color || '#f30',
 				'circle-opacity': 0.5
 			},
 			layout: {
@@ -369,7 +437,13 @@ export function addLayer(
 			}
 			// filter: ['==', ['get', 'id'], feature.properties.id]
 		});
-		FEATURES.allLoaded_layerIds.push(layerId);
+
+		// PUSH TO FEATURES
+		if (FEATURES) {
+			if (FEATURES.allLoaded_layerIds) {
+				FEATURES.allLoaded_layerIds.push(layerId);
+			}
+		}
 	}
 
 	// -------------------------------------------
