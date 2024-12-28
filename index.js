@@ -3,6 +3,7 @@
 import { consoleLogAllLayers } from './utils/consoleLogAllLayers';
 import { getMapPosition } from './utils/getMapPosition';
 import { waitForStyleLoad } from './utils/waitForStyleLoad';
+import { drawTestdots } from './utils/drawTestdots';
 
 //-------------------------------------------------------------------
 // Basemap
@@ -17,7 +18,7 @@ import { registerSVG } from './utils/registerSVG';
 
 //----------------------------------------------
 // Add Features
-import { addFeatures } from './utils/addFeatures' //! NEW
+import { addFeatures } from './utils/addFeatures'; //! NEW
 import { addLayer } from './utils/addLayer';
 
 //----------------------------------------------
@@ -41,7 +42,6 @@ import { toggleGeoref } from './utils/toggleGeoref';
 import { toggleFeature } from './utils/toggleFeature';
 import { toggleBackgrounds } from './utils/toggleBackgrounds';
 
-
 //----------------------------------------------
 // Legacy (JW-Map)
 import { addFeatureGroupsFromDB } from './utils/addFeatureGroupsFromDB';
@@ -54,6 +54,7 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 // ----------
 // Export
 export {
+	drawTestdots,
 	addFeatures,
 	addFeatureGroupsFromDB,
 	addStaticFeatures,
