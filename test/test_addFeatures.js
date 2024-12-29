@@ -1,27 +1,38 @@
 import { addFeatures } from '../utils/addFeatures';
+import {styleset} from './DEFAULT_STYLES';
+
+console.log('dStyles: ', styleset);
 
 export function test_addFeatures(map) {
 	const FeatColl = {
 		type: 'FeatureCollection',
 		features: [
+
+      // A Point
 			{
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [7.042569, 46.881066] },
-				properties: { id: '49f56x10831cs7p', name: 'Römisches Amphitheater Aventicum' }
+				properties: {
+					id: '49f56x10831cs7p',
+					name: 'Römisches Amphitheater Aventicum',
+					style: {
+						circleColor: 'red',
+						points: {
+							type: 'icon',
+							icon: { iconImage: 'butterfly' }
+						}
+					}
+				}
 			},
+
+      // A Line
 			{
 				type: 'Feature',
-				geometry: { type: 'Point', coordinates: [8.7933439, 46.1678596] },
-				properties: { id: 'qmq36u8z9b2x5nc', name: 'Castello Visconteo' }
-			},
-			{
-				type: 'Feature',
-				geometry: { type: 'Point', coordinates: [6.9762993, 46.3150334] },
-				properties: { id: 'c6079rsfypjj863', name: "Château d'Aigle" }
-			},
-			{
-				type: 'Feature',
-				properties: { id: 'waejkl3782hjkwl', name: 'Connecting Lines' },
+				properties: {
+					id: 'feature-1',
+					name: 'Connecting Lines',
+					style: {}
+				},
 				geometry: {
 					type: 'LineString',
 					coordinates: [
@@ -31,9 +42,22 @@ export function test_addFeatures(map) {
 					]
 				}
 			},
+      // Two more Points
 			{
 				type: 'Feature',
-				properties: {id: 'awefkjl'},
+				geometry: { type: 'Point', coordinates: [8.7933439, 46.1678596] },
+				properties: { id: 'feature-2', name: 'Castello Visconteo' }
+			},
+			{
+				type: 'Feature',
+				geometry: { type: 'Point', coordinates: [6.9762993, 46.3150334] },
+				properties: { id: 'feature-3', name: "Château d'Aigle" }
+			},
+
+      // Polygon
+			{
+				type: 'Feature',
+				properties: { id: 'feature-4' },
 				geometry: {
 					type: 'Polygon',
 					coordinates: [
@@ -58,21 +82,42 @@ export function test_addFeatures(map) {
 	// Add Features
 	addFeatures(map, FeatColl, {
 		id: 'test',
-		manualStyle: {
-      force: {
+		// sortByTypesArray: ['lines', 'points', 'polygons'],
+		// allowDirectAccess: true,
+		manualStyleset: {
+			force: {
+        points: {
+          type: 'circle',
+          circle: {
+            circleRadius: 16,
+            circleColor: 'lightblue'
+          }
+        },
+        lines: {
+          lineDashArray: [5,5],
+          lineWidth: 10,
+          lineCap: 'round',
+          lineJoin: 'round',
+          // glow: { lineWidthGlowFactor: 5, lineBlur: 5 }
+        },
+        polygons: {
+
+        }
       },
-			linesStyle: {
-				lineWidth: 1,
-				lineColor: 'black',
+      points: {
+
+      },
+      lines: {
+        lineColor: 'blue',
+      },
+			polygons: {
+				lineWidth: 5,
+				lineColor: 'green',
+				fillColor: 'green',
 				hasGlow: true,
-				glowStyle: { lineWidthGlowFactor: 5, glowBlur: 5 },
+				glow: { lineWidthGlowFactor: 5, lineBlur: 5 }
 			},
-			pointsStyle: {
-				circleStyle: {
-					circleRadius: 6
-				}
-			},
-			polygonStyle: {}
-		}
+		},
+    defaultStyleset: styleset
 	});
 }

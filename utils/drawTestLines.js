@@ -11,7 +11,7 @@ export function drawTestLines(map) {
 			features: [
 				{
 					type: 'Feature',
-					properties: { id: 'waejkl3782hjkwl', name: 'Connecting Lines' },
+					properties: { id: 'waejkl3782hjkwl', name: 'Connecting Lines', lineColor: 'green', lineWidth: 4 },
 					geometry: {
 						type: 'LineString',
 						coordinates: [
@@ -29,10 +29,10 @@ export function drawTestLines(map) {
 		id: 'myTestLines',
 		type: 'line',
 		source: 'mylines',
-		paint: {
-			'line-color': 'blue',
-			'line-width': 6,
-			'line-opacity': 1
-		}
+		// paint: {
+			// 'line-color': 'blue',
+			// 'line-width': 6,
+			// 'line-opacity': 1
+		// }
 	});	
 }

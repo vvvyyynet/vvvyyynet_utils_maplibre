@@ -40,6 +40,7 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - solve fill-pattern-problem (same goes for iconName, I guess...)
 
 ### Fixes
+- fix: linewidth must be set for glow, it won't work on the default.
 - test: array-syntax alone
 - fix: array-syntax won't work when mixed with e.g. lineWidth -> consider adding the manualStyles to the geoJSON file during `addFeatures` and then using maplibre's internal coalesce syntax. I guess, when applied on internal properties only, it should work fine.
 - fix: if a boolean is false it will be just fallbacked? What then? Pass as string? Why is setInvisible still working??

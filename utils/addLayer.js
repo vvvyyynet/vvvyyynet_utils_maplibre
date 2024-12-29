@@ -6,48 +6,61 @@ import maplibregl from 'maplibre-gl';
 
 function getNestedProperty(base, path) {
 	return path.split('.').reduce((obj, key) => {
-		// console.log(obj, key);
 		return obj?.[key];
 	}, base);
 }
 
-// function coalesceCoalesce(base, key) {
-// 	//! is this really needed?
-// 	return (
-// 		base?.force[key] || [
-// 			'coalesce',
-// 			['get', key],
-// 			getgStyle(key) || base?.[key] || DEFAULTS[base][key]
-// 		]
-// 	);
-// }
-
-function coalesce(mStyle, gStyle, path) {
-	// console.log(path);
-	const forcePath = `force.${path}`;
-
-	// Slow version with output (only for debugging)
-	// const val1 = getNestedProperty(mStyle, forcePath);
-	// const val2 = getNestedProperty(gStyle, path);
-	// const val3 = getNestedProperty(mStyle, path);
-	// const val4 = getNestedProperty(DEFAULTS, path);
-	// console.log('FORCE: ', val1);
-	// console.log('GEOJSON: ', val2);
-	// console.log('FALLBACK: ', val3);
-	// console.log('DEFAULT: ', val4);
-	// return val1 || val2 || val3 || val4;
-
-	// Fast version (will stop calculating as soon as truthy value is found)
-	return (
-		getNestedProperty(mStyle, forcePath) ||
-		getNestedProperty(gStyle, path) ||
-		getNestedProperty(mStyle, path) ||
-		getNestedProperty(DEFAULTS, path)
-	);
+function accumulateKeyValuePairs(keyvaluepairs) {
+	// Accumulate all key-value pairs with valid value
+	return keyvaluepairs.reduce((acc, [key, value]) => {
+		if (value) {
+			acc[key] = value;
+		}
+		return acc;
+	}, {});
 }
 
-function getDash(feature, gStyle) {
-	return feature.properties.is_dashed || gStyle.is_dashed ? [1, 1] : [1, 0];
+function coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowDirectAccess) {
+	const forcePath = `force.${path}`;
+	// Slow version with output (only for debugging)
+	const val1 = getNestedProperty(manualStyleset, forcePath);
+	const val2 = getNestedProperty(featureStyleset, path);
+	const val3 = getNestedProperty(featureStyleset, path.split('.').pop()); // last element
+	const val4 = getNestedProperty(manualStyleset, path);
+	const val5 = getNestedProperty(defaultStyleset, path);
+	const returnvalue = val1 || val2 || (allowDirectAccess ? val3 : undefined) || val4 || val5;
+	if (path.split('.').pop() == 'lineDashArray') {
+		// if (true) {
+		console.log('path', path);
+		console.log('manualStyleset forced: ', val1);
+		console.log('featureStyleset nested: ', val2);
+		console.log('featureStyleset direct: ', val3);
+		console.log('manualStyleset normal: ', val4);
+		console.log('defaultStyleset: ', val5);
+		console.log(path, returnvalue);
+	}
+	return returnvalue;
+
+	// Fast version (will stop calculating as soon as truthy value is found)
+	// return (
+	// 	getNestedProperty(manualStyleset, forcePath) ||
+	// 	getNestedProperty(featureStyleset, path) ||
+	// 	(allowDirectAccess ? getNestedProperty(featureStyleset, path.split('.').pop()) : undefined) ||
+	// 	getNestedProperty(manualStyleset, path) ||
+	// 	getNestedProperty(defaultStyleset, path)
+	// );
+}
+
+function setAlltoValue(object, path, value) {
+	// Set a specific path both on manualStyleset and on featureStyleset to a certain value (create the path if it does not exist)
+	path.split('.').reduce((acc, key, idx, arr) => {
+		acc[key] = idx === arr.length - 1 ? value : acc[key] || {};
+		return acc[key];
+	}, object);
+
+	// A hardcoded example for object = manualStyleset and path='lines.hasGlow'
+	// manualStyleset.lines = manualStyleset.lines || {};
+	// manualStyleset.lines.hasGlow = value;
 }
 
 function makeLayerInteractive(map, layerId) {
@@ -117,90 +130,6 @@ function makeLayerInteractive(map, layerId) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// DEFAULTS
-//////////////////////////////////////////////////////////////////////////////////////////
-const DEFAULTS = {
-	points: {
-		type: 'circle', // 'icon' || 'circle'
-		// GENERAL
-		// Layout properties
-		setInvisible: false,
-
-		// CIRCLE
-		circleStyle: {
-			// Paint properties
-			circleRadius: 10,
-			circleColor: 'red',
-			circleStrokeColor: 'black',
-			circleStrokeWidth: 1
-		},
-		// ICON
-		iconStyle: {
-			hasIconBackdrop: false,
-			// BACKDROP CIRCLE
-			iconBackdropStyle: {
-				// Paint properties
-				setInvisible: false,
-				circleRadius: 18,
-				circleColor: 'white',
-				circleStrokeColor: 'black',
-				circleStrokeWidth: 1
-			},
-			// SYMBOL
-			// Layout properties
-			iconName: 'dot',
-			iconSize: 0.02, // very much depends on the icon...
-			iconAnchor: 'center',
-			iconOverlap: 'cooperative',
-			textField: ['get', 'comment'], //??
-			textOffset: [0, 1.25],
-			textAnchor: 'top'
-		}
-		//! TODO: Not implemented yet (many more)
-		// hasGlow
-	},
-	lines: {
-		// Glow properties (not native to maplibregl)
-		hasGlow: false,
-		isGlow: false, // will be set programmatically, not intended for outside use
-		glowStyle: {
-			lineWidthGlowFactor: 5,
-			lineBlur: 5
-		},
-		// Layout properties
-		setInvisible: false,
-		lineJoin: 'round',
-		lineCap: 'round',
-		// Paint properties
-		lineColor: 'red',
-		lineWidth: 2,
-		lineOpacity: 1,
-		lineBlur: 0,
-		lineDashArray: [1, 0]
-		//! TODO: Not implemented yet (many more)
-		// lineWidthArray: [0, 4, 16, 8],
-		// isDotted: false
-	},
-	polygons: {
-		// General properties
-		maxZoom: 20,
-		// Layout properties
-		setInvisible: false,
-		fillColor: 'yellow',
-		fillPattern: 'dot', //'red-striped-pattern' // cannot be null or undefined
-		fillOpacity: 0.5,
-		fillAntialias: true, // to be on the safe side,
-		// Paint properties
-		lineColor: 'darkblue',
-		lineWidth: 4,
-		lineOpacity: 1
-		//!TODO not implemented yet
-		// lineWidthZoom: [8, 0.1, 15, 6]
-		// hasGlow
-	}
-};
-
-//////////////////////////////////////////////////////////////////////////////////////////
 // Add Layer Function
 //////////////////////////////////////////////////////////////////////////////////////////
 export function addLayer(
@@ -209,9 +138,13 @@ export function addLayer(
 	FEATURES = null,
 	sourceId,
 	layerId,
-	gStyle = {}, // styling as read from geoJSON
-	mStyle = {}, // manual styling
-	groupNames = []
+	featureStyleset = {}, // styling as read from geoJSON
+	manualStyleset = {}, // manual styling
+	groupNames = [],
+	{
+		allowDirectAccess = false,
+		defaultStyleset = {} // default styles
+	}
 ) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
@@ -235,8 +168,12 @@ export function addLayer(
 	// ---------------------------------------------------------------------------------------
 	// CHECK FEATURE TYPE
 	const featureType = feature?.geometry?.type;
-	console.log('FEATURE TYPE: ', featureType);
 
+	// ---------------------------------------------------------------------------------------
+	// RE-DEFINE COALESCE FUNCTION
+	function c(path) {
+		return coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowDirectAccess);
+	}
 	// ---------------------------------------------------------------------------------------
 	// ADD LAYER
 
@@ -244,7 +181,7 @@ export function addLayer(
 	// Points
 	// --------------------------------------
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
-		switch (coalesce(mStyle, gStyle, 'points.type')) {
+		switch (c('points.type')) {
 			// Add simple circles
 			case 'circle':
 				map.addLayer({
@@ -252,20 +189,26 @@ export function addLayer(
 					type: 'circle',
 					source: sourceId,
 					layout: {
-						visibility: coalesce(mStyle, gStyle, 'points.setInvisible') ? 'none' : 'visible'
+						...accumulateKeyValuePairs([
+							['visibility', c('points.setInvisible') ? 'none' : 'visible']
+						])
 					},
 					paint: {
-						'circle-radius': coalesce(mStyle, gStyle, 'points.circleStyle.circleRadius'),
-						'circle-color': coalesce(mStyle, gStyle, 'points.circleStyle.circleColor'),
-						'circle-stroke-color': coalesce(mStyle, gStyle, 'points.circleStyle.circleStrokeColor'),
-						'circle-stroke-width': coalesce(mStyle, gStyle, 'points.circleStyle.circleStrokeWidth')
+						...accumulateKeyValuePairs([
+							['circle-radius', c('points.circle.circleRadius')],
+							['circle-color', c('points.circle.circleColor')],
+							['circle-stroke-color', c('points.circle.circleStrokeColor')],
+							['circle-stroke-width', c('points.circle.circleStrokeWidth')]
+						])
 					},
 					filter: ['==', ['get', 'id'], feature.properties.id]
 				});
 				break;
+
+			// Add icons
 			case 'icon':
 				// Add backdrop circle
-				if (coalesce(mStyle, gStyle, 'points.iconStyle.hasIconBackdrop')) {
+				if (c('points.icon.hasIconBackdrop')) {
 					map.addLayer({
 						id: `${layerId}-background`,
 						type: 'circle',
@@ -274,35 +217,17 @@ export function addLayer(
 							groupNames: groupNames
 						},
 						layout: {
-							visibility: coalesce(
-								mStyle,
-								gStyle,
-								'points.iconStyle.iconBackdropStyle.setInvisible'
-							)
-								? 'none'
-								: 'visible'
+							...accumulateKeyValuePairs([
+								['visibility', c('points.setInvisible') ? 'none' : 'visible']
+							])
 						},
 						paint: {
-							'circle-radius': coalesce(
-								mStyle,
-								gStyle,
-								'points.iconStyle.iconBackdropStyle.circleRadius'
-							),
-							'circle-color': coalesce(
-								mStyle,
-								gStyle,
-								'points.iconStyle.iconBackdropStyle.circleColor'
-							),
-							'circle-stroke-color': coalesce(
-								mStyle,
-								gStyle,
-								'points.iconStyle.iconBackdropStyle.circleStrokeColor'
-							),
-							'circle-stroke-width': coalesce(
-								mStyle,
-								gStyle,
-								'points.iconStyle.iconBackdropStyle.circleStrokeWidth'
-							)
+							...accumulateKeyValuePairs([
+								['circle-radius', c('points.icon.backdrop.circleRadius')],
+								['circle-color', c('points.icon.backdrop.circleColor')],
+								['circle-stroke-color', c('points.icon.backdrop.circleStrokeColor')],
+								['circle-stroke-width', c('points.icon.backdrop.circleStrokeWidth')]
+							])
 						},
 						filter: ['==', ['get', 'id'], feature.properties.id]
 					});
@@ -317,15 +242,17 @@ export function addLayer(
 						groupNames: groupNames
 					},
 					layout: {
-						visibility: coalesce(mStyle, gStyle, 'points.setInvisible') ? 'none' : 'visible',
-						'icon-image': coalesce(mStyle, gStyle, 'points.iconStyle.iconName'), // Note that icons still must be registered (added) to the map
-						'icon-size': coalesce(mStyle, gStyle, 'points.iconStyle.iconSize'),
-						'icon-anchor': coalesce(mStyle, gStyle, 'points.iconStyle.iconAnchor'),
-						'icon-overlap': coalesce(mStyle, gStyle, 'points.iconStyle.iconOverlap'),
-						'text-field': coalesce(mStyle, gStyle, 'points.iconStyle.textField'),
-						'text-offset': coalesce(mStyle, gStyle, 'points.iconStyle.textOffset'),
-						'text-anchor': coalesce(mStyle, gStyle, 'points.iconStyle.textAnchor')
-						// 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+						...accumulateKeyValuePairs([
+							['visibility', c('points.setInvisible') ? 'none' : 'visible'],
+							['icon-image', c('points.icon.iconImage')],
+							['icon-size', c('points.icon.iconSize')],
+							['icon-anchor', c('points.icon.iconAnchor')],
+							['icon-overlap', c('points.icon.iconOverlap')],
+							['text-field', c('points.icon.textField')],
+							['text-offset', c('points.icon.textOffset')],
+							['text-anchor', c('points.icon.textAnchor')],
+							['text-font', c('points.icon.textFont')]
+						])
 					},
 					filter: ['==', ['get', 'id'], feature.properties.id]
 				});
@@ -352,67 +279,90 @@ export function addLayer(
 		// Lines
 		// --------------------------------------
 	} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
-		console.log('LINE: ', mStyle?.lines);
-
 		// CHECK GLOW AND RE-RUN addLayer
-		if (coalesce(mStyle, gStyle, 'lines.hasGlow')) {
-			let mStyleOfGlow = { ...mStyle }; // shallow copy is important!
-			mStyleOfGlow.lines.hasGlow = false;
-			mStyleOfGlow.lines.isGlow = true;
+		if (c('lines.hasGlow')) {
+			const manualStylesetOfGlow = { ...manualStyleset }; // shallow copy is important!
+
+			// set all hasGlow properties false
+			setAlltoValue(manualStyleset, 'lines.hasGlow', false);
+			setAlltoValue(manualStyleset, 'force.lines.hasGlow', false);
+			setAlltoValue(featureStyleset, 'lines.hasGlow', false);
+			setAlltoValue(featureStyleset, 'force.lines.hasGlow', false);
+
+			// setAlltoValue(featureStyleset, 'hasGlow', false); //! DEBUG: This is an implementation for the non-nested featureStyleset version, but be careful not to mix co-existing glows on different feature types!
+			setAlltoValue(manualStylesetOfGlow, 'lines.isGlow', true);
+			setAlltoValue(manualStylesetOfGlow, 'force.lines.isGlow', true);
 
 			//
-			addLayer(map, feature, FEATURES, sourceId, layerId, gStyle, mStyleOfGlow, groupNames);
+			addLayer(
+				map,
+				feature,
+				FEATURES,
+				sourceId,
+				layerId,
+				featureStyleset,
+				manualStylesetOfGlow,
+				groupNames,
+				{
+					allowDirectAccess: allowDirectAccess,
+					defaultStyleset: defaultStyleset
+				}
+			);
 
 			// before continuing, make sure isGlow is false for normal line
-			mStyle.lines.isGlow = false;
+			setAlltoValue(manualStyleset, 'lines.isGlow', false);
+			setAlltoValue(manualStyleset, 'force.lines.isGlow', false);
 		}
-
-		const lineWidthGlowFactor = mStyle?.lines?.isGlow
-			? coalesce(mStyle, gStyle, 'lines.glowStyle.lineWidthGlowFactor')
-			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
 		const layerIdGlow = `${layerId}-glow`;
+		const lineWidthGlowFactor = manualStyleset?.lines?.isGlow
+			? c('lines.glow.lineWidthGlowFactor')
+			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
 
 		map.addLayer({
-			id: mStyle?.lines?.isGlow ? layerIdGlow : layerId,
+			id: manualStyleset?.lines?.isGlow ? layerIdGlow : layerId,
 			type: 'line',
 			source: sourceId,
 			metadata: {
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: coalesce(mStyle, gStyle, 'lines.setInvisible') ? 'none' : 'visible',
-				'line-join': coalesce(mStyle, gStyle, 'lines.lineJoin'),
-				'line-cap': coalesce(mStyle, gStyle, 'lines.lineCap')
+				...accumulateKeyValuePairs([
+					['visibility', c('lines.setInvisible') ? 'none' : 'visible'],
+					['line-join', c('lines.lineJoin')],
+					['line-cap', c('lines.lineCap')]
+				])
 			},
 			paint: {
-				'line-color': coalesce(mStyle, gStyle, 'lines.lineColor'),
-				'line-width': coalesce(mStyle, gStyle, 'lines.lineWidth') * lineWidthGlowFactor,
-				//! DEBUG Mixing lineWidth with lineWidthArray will NOT work! try with nested coalesce, but I fear, this won't not work either
-				// 'line-width':
-				// 	(coalesce(mStyle, gStyle, 'lines.lineWidth') || [
-				// 		'interpolate',
-				// 		['linear'],
-				// 		['zoom'],
-				// 		//!? Can I spread? ...coalesce(mStyle?.lines, 'lineWidthArray') to have as many as I need?
-				// 		//! -> maybe even put 'linear' and 'zoom' on [0] and [1] and start array at [2]
-				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[0],
-				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[1],
-				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[2],
-				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[3]
-				// 	]) * lineWidthGlowFactor,
-				'line-opacity': coalesce(mStyle, gStyle, 'lines.lineOpacity'),
-				'line-blur': mStyle?.lines?.isGlow
-					? coalesce(mStyle, gStyle, 'lines.glowStyle.lineBlur')
-					: coalesce(mStyle, gStyle, 'lines.lineBlur'),
-				'line-dasharray':
-					getDash(feature, gStyle) || coalesce(mStyle, gStyle, 'lines.lineDashArray')
+				...accumulateKeyValuePairs([
+					['line-dasharray', c('lines.lineDashArray')],
+					['line-color', c('lines.lineColor')],
+					['line-opacity', c('lines.lineOpacity')],
+					['line-width', c('lines.lineWidth') * lineWidthGlowFactor],
+					[
+						'line-blur',
+						manualStyleset?.lines?.isGlow ? c('lines.glow.lineBlur') : c('lines.lineBlur')
+					] //! DEBUG: not setting defaultStyleset may break
+				]) //! DEBUG undefined*Number = NaN... does this cause any problems?
 			},
+			//! DEBUG Mixing (fixed) lineWidth with lineWidthArray will NOT work! try with nested coalesce, but I fear, this won't not work either
+			// 'line-width':
+			// 	(c('lines.lineWidth') || [
+			// 		'interpolate',
+			// 		['linear'],
+			// 		['zoom'],
+			// 		//!? Can I spread? ...c('foo.bar.lineWidthArray') to have as many as I need?
+			// 		//! -> maybe even put 'linear' and 'zoom' on [0] and [1] and start array at [2]
+			// 		c('lines.lineWidthArray')[0],
+			// 		c('lines.lineWidthArray')[1],
+			// 		c('lines.lineWidthArray')[2],
+			// 		c('lines.lineWidthArray')[3]
+			// 	]) * lineWidthGlowFactor,
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
 		// Manual Adjustments
 		// Make sure glow is not dashed
-		if (mStyle?.lines?.isGlow) {
+		if (manualStyleset?.lines?.isGlow) {
 			map.setPaintProperty(layerIdGlow, 'line-dasharray', null);
 		}
 
@@ -420,12 +370,13 @@ export function addLayer(
 		if (FEATURES) {
 			if (FEATURES.allLoaded_layerIds) {
 				FEATURES.allLoaded_layerIds.push(layerId);
-				if (mStyle?.lines?.hasGlow) {
+				if (manualStyleset?.lines?.hasGlow) {
 					const glow_id = `${layerId}-glow`;
-					addLine(glow_id, true);
+					addLine(glow_id, true); //??
 					FEATURES.allLoaded_layerIds.push(glow_id);
 				}
 			}
+			console.log('FEATURES: ', FEATURES);
 		}
 
 		// --------------------------------------
@@ -433,6 +384,7 @@ export function addLayer(
 		// --------------------------------------
 	} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
 		// Filling
+
 		map.addLayer({
 			id: layerId,
 			type: 'fill',
@@ -441,20 +393,30 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: coalesce(mStyle, gStyle, 'polygons.setInvisible') ? 'none' : 'visible'
+				...accumulateKeyValuePairs([
+					['visibility', c('polygons.setInvisible') ? 'none' : 'visible']
+				])
 			},
 			paint: {
-				'fill-color': coalesce(mStyle, gStyle, 'polygons.fillColor'),
-				'fill-pattern': coalesce(mStyle, gStyle, 'polygons.fillPattern'),
-				'fill-opacity': coalesce(mStyle, gStyle, 'polygons.fillOpacity'),
-				'fill-antialias': coalesce(mStyle, gStyle, 'polygons.fillAntialias')
+				...accumulateKeyValuePairs([
+					['fill-color', c('polygons.fillColor')],
+					['fill-pattern', c('polygons.fillPattern')], // Note, that setting 'fill-pattern':null will still remove fillColor!! (This is a //! BUG in maplibre)
+					['fill-opacity', c('polygons.fillOpacity')],
+					['fill-antialias', c('polygons.fillAntialias')]
+				])
 			},
-			maxzoom: coalesce(mStyle, gStyle, 'polygons.maxZoom'),
+			...accumulateKeyValuePairs([['maxzoom', c('polygons.maxZoom')]]),
+
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
 		// ContourLine
 		const layerIdContour = `${layerId}-contour`;
+
+		const lineWidthGlowFactor = manualStyleset?.polygons?.isGlow
+			? c('poolygon.glow.lineWidthGlowFactor')
+			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
+
 		map.addLayer({
 			id: layerIdContour,
 			type: 'line',
@@ -463,14 +425,23 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: coalesce(mStyle, gStyle, 'polygons.setInvisible') ? 'none' : 'visible'
+				...accumulateKeyValuePairs([
+					['visibility', c('polygons.setInvisible') ? 'none' : 'visible'],
+					['line-join', c('polygons.lineJoin')]
+				])
 			},
 			paint: {
-				'line-color': coalesce(mStyle, gStyle, 'polygons.lineColor'),
-				'line-width': coalesce(mStyle, gStyle, 'polygons.lineWidth'),
-				// This won't work, see above for explanation
-				// 'line-width': ['interpolate', ['linear'], ['zoom']],
-				'line-opacity': coalesce(mStyle, gStyle, 'polygons.lineOpacity')
+				...accumulateKeyValuePairs([
+					['line-dasharray', c('polygons.lineDashArray')],
+					['line-color', c('polygons.lineColor')],
+					['line-opacity', c('polygons.lineOpacity')],
+					['line-width', c('polygons.lineWidth') * lineWidthGlowFactor], //! DEBUG undefined*Number = NaN... does this cause any problems? Moreover, if no defaultStyleset is provided this won't work, since multiplication is not forwarded to maplibregl... but I think this is fine, but needs to be documented.
+					//! TODO: implement 'line-width': ['interpolate', ['linear'], ['zoom']],
+					[
+						'line-blur',
+						manualStyleset?.polygons?.isGlow ? c('polygons.glow.lineBlur') : c('polygons.lineBlur')
+					]
+				])
 			},
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
@@ -498,11 +469,11 @@ export function addLayer(
 			},
 			paint: {
 				'circle-radius': feature.properties.radius,
-				'circle-color': gStyle.color || '#f30',
+				'circle-color': featureStyleset.color || '#f30',
 				'circle-opacity': 0.5
 			},
 			layout: {
-				visibility: 'none' // Hidden by default
+				...accumulateKeyValuePairs([['visibility', c('circles.setInvisible') ? 'none' : 'visible']])
 			},
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});

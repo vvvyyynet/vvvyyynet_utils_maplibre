@@ -3,12 +3,14 @@ export function addFeatures(
 	map,
 	FeatColl,
 	{
+		sortByTypesArray = false, // falsy or array
 		FEATURES = undefined,
 		id = undefined,
 		id_prefix = undefined,
-		geoJSONStyle = undefined,
-		manualStyle = undefined,
-		groupNames = undefined
+		manualStyleset = undefined,
+		defaultStyleset = undefined,
+		groupNames = undefined,
+		allowDirectAccess = undefined
 	}
 ) {
 	// Function Arguments
@@ -34,9 +36,28 @@ export function addFeatures(
 		});
 	}
 
+	// Sort Feature Collection by type
+	if (sortByTypesArray) {
+		console.error('sortByTypesArray is not implemented yet.');
+	}
+
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
-		addLayer(map, feature, FEATURES, sourceId, layerId, geoJSONStyle, manualStyle, groupNames);
+		const featureStyleset = feature.properties.style;
+		addLayer(
+			map,
+			feature,
+			FEATURES,
+			sourceId,
+			layerId,
+			featureStyleset,
+			manualStyleset,
+			groupNames,
+			{
+				defaultStyleset: defaultStyleset,
+				allowDirectAccess: allowDirectAccess
+			}
+		);
 	});
 }
