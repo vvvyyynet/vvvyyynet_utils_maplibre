@@ -187,7 +187,7 @@ const DEFAULTS = {
 		// Layout properties
 		setInvisible: false,
 		fillColor: 'yellow',
-		fillPattern: 'dot', //null, //'red-striped-pattern'
+		fillPattern: 'dot', //'red-striped-pattern' // cannot be null or undefined
 		fillOpacity: 0.5,
 		fillAntialias: true, // to be on the safe side,
 		// Paint properties
@@ -203,8 +203,6 @@ const DEFAULTS = {
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add Layer Function
 //////////////////////////////////////////////////////////////////////////////////////////
-//! BEWARE: currently, what may seem as fallbacks only jumps in if no force or gStyle is provided. However, this will not help with invalid values, which may still lead to errors, or features simply not showing on the map.
-// force will win over gStyle
 export function addLayer(
 	map,
 	feature,
