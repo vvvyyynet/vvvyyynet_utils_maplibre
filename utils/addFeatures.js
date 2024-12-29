@@ -6,10 +6,9 @@ export function addFeatures(
 		FEATURES = undefined,
 		id = undefined,
 		id_prefix = undefined,
-		groupNames = undefined,
 		geoJSONStyle = undefined,
-		linesStyle = undefined,
-		pointsStyle = undefined
+		manualStyle = undefined,
+		groupNames = undefined
 	}
 ) {
 	// Function Arguments
@@ -38,16 +37,6 @@ export function addFeatures(
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
-		addLayer(
-			map,
-			feature,
-			FEATURES,
-			sourceId,
-			layerId,
-			geoJSONStyle,
-			groupNames,
-			linesStyle,
-			pointsStyle
-		);
+		addLayer(map, feature, FEATURES, sourceId, layerId, geoJSONStyle, manualStyle, groupNames);
 	});
 }

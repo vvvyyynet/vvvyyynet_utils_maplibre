@@ -3,14 +3,51 @@ import maplibregl from 'maplibre-gl';
 //////////////////////////////////////////////////////////////////////////////////////////
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////////////////
-function getFromStyle(geoJSONStyle, name) {
-	//! BEWARE: what was this undefined-replacement for? (before it was even more explicit, replacing undefined with null)
-	// may have to do sth with maplibregl erroring out on undefined... I had this but could not reproduce.
-	return (geoJSONStyle[name] = geoJSONStyle[name] ?? null); // replace undefined with null
+
+function getNestedProperty(base, path) {
+	return path.split('.').reduce((obj, key) => {
+		// console.log(obj, key);
+		return obj?.[key];
+	}, base);
 }
 
-function getDash(feature, geoJSONStyle) {
-	return feature.properties.is_dashed || geoJSONStyle.is_dashed ? [1, 1] : [1, 0];
+// function coalesceCoalesce(base, key) {
+// 	//! is this really needed?
+// 	return (
+// 		base?.force[key] || [
+// 			'coalesce',
+// 			['get', key],
+// 			getgStyle(key) || base?.[key] || DEFAULTS[base][key]
+// 		]
+// 	);
+// }
+
+function coalesce(mStyle, gStyle, path) {
+	// console.log(path);
+	const forcePath = `force.${path}`;
+
+	// Slow version with output (only for debugging)
+	// const val1 = getNestedProperty(mStyle, forcePath);
+	// const val2 = getNestedProperty(gStyle, path);
+	// const val3 = getNestedProperty(mStyle, path);
+	// const val4 = getNestedProperty(DEFAULTS, path);
+	// console.log('FORCE: ', val1);
+	// console.log('GEOJSON: ', val2);
+	// console.log('FALLBACK: ', val3);
+	// console.log('DEFAULT: ', val4);
+	// return val1 || val2 || val3 || val4;
+
+	// Fast version (will stop calculating as soon as truthy value is found)
+	return (
+		getNestedProperty(mStyle, forcePath) ||
+		getNestedProperty(gStyle, path) ||
+		getNestedProperty(mStyle, path) ||
+		getNestedProperty(DEFAULTS, path)
+	);
+}
+
+function getDash(feature, gStyle) {
+	return feature.properties.is_dashed || gStyle.is_dashed ? [1, 1] : [1, 0];
 }
 
 function makeLayerInteractive(map, layerId) {
@@ -80,57 +117,103 @@ function makeLayerInteractive(map, layerId) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// Add Layer
+// DEFAULTS
 //////////////////////////////////////////////////////////////////////////////////////////
+const DEFAULTS = {
+	points: {
+		type: 'circle', // 'icon' || 'circle'
+		// GENERAL
+		// Layout properties
+		setInvisible: false,
+
+		// CIRCLE
+		circleStyle: {
+			// Paint properties
+			circleRadius: 10,
+			circleColor: 'red',
+			circleStrokeColor: 'black',
+			circleStrokeWidth: 1
+		},
+		// ICON
+		iconStyle: {
+			hasIconBackdrop: false,
+			// BACKDROP CIRCLE
+			iconBackdropStyle: {
+				// Paint properties
+				setInvisible: false,
+				circleRadius: 18,
+				circleColor: 'white',
+				circleStrokeColor: 'black',
+				circleStrokeWidth: 1
+			},
+			// SYMBOL
+			// Layout properties
+			iconName: 'dot',
+			iconSize: 0.02, // very much depends on the icon...
+			iconAnchor: 'center',
+			iconOverlap: 'cooperative',
+			textField: ['get', 'comment'], //??
+			textOffset: [0, 1.25],
+			textAnchor: 'top'
+		}
+		//! TODO: Not implemented yet (many more)
+		// hasGlow
+	},
+	lines: {
+		// Glow properties (not native to maplibregl)
+		hasGlow: false,
+		isGlow: false, // will be set programmatically, not intended for outside use
+		glowStyle: {
+			lineWidthGlowFactor: 5,
+			lineBlur: 5
+		},
+		// Layout properties
+		setInvisible: false,
+		lineJoin: 'round',
+		lineCap: 'round',
+		// Paint properties
+		lineColor: 'red',
+		lineWidth: 2,
+		lineOpacity: 1,
+		lineBlur: 0,
+		lineDashArray: [1, 0]
+		//! TODO: Not implemented yet (many more)
+		// lineWidthArray: [0, 4, 16, 8],
+		// isDotted: false
+	},
+	polygons: {
+		// General properties
+		maxZoom: 20,
+		// Layout properties
+		setInvisible: false,
+		fillColor: 'yellow',
+		fillPattern: 'dot', //null, //'red-striped-pattern'
+		fillOpacity: 0.5,
+		fillAntialias: true, // to be on the safe side,
+		// Paint properties
+		lineColor: 'darkblue',
+		lineWidth: 4,
+		lineOpacity: 1
+		//!TODO not implemented yet
+		// lineWidthZoom: [8, 0.1, 15, 6]
+		// hasGlow
+	}
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// Add Layer Function
+//////////////////////////////////////////////////////////////////////////////////////////
+//! BEWARE: currently, what may seem as fallbacks only jumps in if no force or gStyle is provided. However, this will not help with invalid values, which may still lead to errors, or features simply not showing on the map.
+// force will win over gStyle
 export function addLayer(
 	map,
 	feature,
-	FEATURES = undefined,
+	FEATURES = null,
 	sourceId,
 	layerId,
-	geoJSONStyle = {}, // styling as read from geoJSON
-	groupNames = [],
-	linesStyle = {
-		// manual styling (values post-fixed with Force will win over geoJSONStyle)
-		setInvisible: false,
-		lineColor: 'red',
-		lineColorForce: 'red',
-		isDotted: false,
-		lineBlur: 5,
-		lineWidth: 5,
-		lineWidthForce: 4,
-		lineWidthAtZoom0: 2,
-		lineWidthAtZoom16: 5,
-		hasGlow: false,
-		glowStyle: {
-			lineWidthFactor: 5,
-			lineBlur: 5
-		},
-		isGlow: false // will be set programmatically, not intended for outside use
-	},
-	pointsStyle = {
-		type: 'circle', // 'icon' || 'circle'
-		setInvisible: false,
-		circleStyle: {
-			circleRadius: undefined,
-			circleColor: undefined,
-			circleStrokeColor: undefined,
-			circleStrokeWidth: undefined
-		},
-		iconStyle: {
-			hasIconBackdrop: false,
-			iconNameForce: undefined,
-			iconName: undefined,
-			//! BEWARE: currently, iconName only jumps in if no other iconName is provided, but it will not render in case of a type, e.g. in iconNameForce
-			iconBackdropStyle: {
-				setInvisible: false,
-				circleRadius: undefined,
-				circleColor: undefined,
-				circleStrokeColor: undefined,
-				circleStrokeWidth: undefined
-			}
-		}
-	}
+	gStyle = {}, // styling as read from geoJSON
+	mStyle = {}, // manual styling
+	groupNames = []
 ) {
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
@@ -163,11 +246,7 @@ export function addLayer(
 	// Points
 	// --------------------------------------
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
-		pointsStyle.type = pointsStyle?.type ?? 'circle'; // fallback
-
-		console.log('LINE: ', sourceId, layerId);
-
-		switch (pointsStyle.type) {
+		switch (coalesce(mStyle, gStyle, 'points.type')) {
 			// Add simple circles
 			case 'circle':
 				map.addLayer({
@@ -175,20 +254,20 @@ export function addLayer(
 					type: 'circle',
 					source: sourceId,
 					layout: {
-						visibility: pointsStyle?.setInvisible ? 'none' : 'visible'
+						visibility: coalesce(mStyle, gStyle, 'points.setInvisible') ? 'none' : 'visible'
 					},
 					paint: {
-						'circle-radius': pointsStyle?.circleStyle?.circleRadius || 10,
-						'circle-color': pointsStyle?.circleStyle?.circleColor || 'red',
-						'circle-stroke-color': pointsStyle?.circleStyle?.circleStrokeColor || 'black',
-						'circle-stroke-width': pointsStyle?.circleStyle?.circleStrokeWidth || 1
-					}
-					// filter: ['==', ['get', 'id'], feature.properties.id]
+						'circle-radius': coalesce(mStyle, gStyle, 'points.circleStyle.circleRadius'),
+						'circle-color': coalesce(mStyle, gStyle, 'points.circleStyle.circleColor'),
+						'circle-stroke-color': coalesce(mStyle, gStyle, 'points.circleStyle.circleStrokeColor'),
+						'circle-stroke-width': coalesce(mStyle, gStyle, 'points.circleStyle.circleStrokeWidth')
+					},
+					filter: ['==', ['get', 'id'], feature.properties.id]
 				});
 				break;
 			case 'icon':
 				// Add backdrop circle
-				if (pointsStyle?.iconStyle?.hasIconBackdrop) {
+				if (coalesce(mStyle, gStyle, 'points.iconStyle.hasIconBackdrop')) {
 					map.addLayer({
 						id: `${layerId}-background`,
 						type: 'circle',
@@ -197,19 +276,37 @@ export function addLayer(
 							groupNames: groupNames
 						},
 						layout: {
-							visibility: pointsStyle?.iconStyle?.iconBackdropStyle?.setInvisible
+							visibility: coalesce(
+								mStyle,
+								gStyle,
+								'points.iconStyle.iconBackdropStyle.setInvisible'
+							)
 								? 'none'
 								: 'visible'
 						},
 						paint: {
-							'circle-radius': pointsStyle?.iconStyle?.iconBackdropStyle?.circleRadius || 18,
-							'circle-color': pointsStyle?.iconStyle?.iconBackdropStyle?.circleColor || 'white',
-							'circle-stroke-color':
-								pointsStyle?.iconStyle?.iconBackdropStyle?.circleStrokeColor || '#000000',
-							'circle-stroke-width':
-								pointsStyle?.iconStyle?.iconBackdropStyle?.circleStrokeWidth || 1
-						}
-						// filter: ['==', ['get', 'id'], feature.properties.id]
+							'circle-radius': coalesce(
+								mStyle,
+								gStyle,
+								'points.iconStyle.iconBackdropStyle.circleRadius'
+							),
+							'circle-color': coalesce(
+								mStyle,
+								gStyle,
+								'points.iconStyle.iconBackdropStyle.circleColor'
+							),
+							'circle-stroke-color': coalesce(
+								mStyle,
+								gStyle,
+								'points.iconStyle.iconBackdropStyle.circleStrokeColor'
+							),
+							'circle-stroke-width': coalesce(
+								mStyle,
+								gStyle,
+								'points.iconStyle.iconBackdropStyle.circleStrokeWidth'
+							)
+						},
+						filter: ['==', ['get', 'id'], feature.properties.id]
 					});
 				}
 
@@ -222,25 +319,17 @@ export function addLayer(
 						groupNames: groupNames
 					},
 					layout: {
-						visibility: pointsStyle?.setInvisible ? 'none' : 'visible',
-						'icon-image': pointsStyle?.iconStyle?.iconNameForce || [
-							'coalesce',
-							['get', 'iconName'],
-							getFromStyle(geoJSONStyle, 'iconName') || pointsStyle?.iconStyle?.iconName
-						], // Note: icons must be added to map
-						'icon-size': [
-							'coalesce',
-							['get', 'iconSize'],
-							getFromStyle(geoJSONStyle, 'iconSize') || 0.02
-						],
-						'icon-anchor': 'center',
-						'icon-overlap': 'cooperative',
-						'text-field': ['get', 'comment'],
-						'text-offset': [0, 1.25],
-						'text-anchor': 'top'
+						visibility: coalesce(mStyle, gStyle, 'points.setInvisible') ? 'none' : 'visible',
+						'icon-image': coalesce(mStyle, gStyle, 'points.iconStyle.iconName'), // Note that icons still must be registered (added) to the map
+						'icon-size': coalesce(mStyle, gStyle, 'points.iconStyle.iconSize'),
+						'icon-anchor': coalesce(mStyle, gStyle, 'points.iconStyle.iconAnchor'),
+						'icon-overlap': coalesce(mStyle, gStyle, 'points.iconStyle.iconOverlap'),
+						'text-field': coalesce(mStyle, gStyle, 'points.iconStyle.textField'),
+						'text-offset': coalesce(mStyle, gStyle, 'points.iconStyle.textOffset'),
+						'text-anchor': coalesce(mStyle, gStyle, 'points.iconStyle.textAnchor')
 						// 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-					}
-					// filter: ['==', ['get', 'id'], feature.properties.id]
+					},
+					filter: ['==', ['get', 'id'], feature.properties.id]
 				});
 				break;
 		}
@@ -265,78 +354,67 @@ export function addLayer(
 		// Lines
 		// --------------------------------------
 	} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
-		console.log('LINE: ', linesStyle);
+		console.log('LINE: ', mStyle?.lines);
 
 		// CHECK GLOW AND RE-RUN addLayer
-		if (linesStyle?.hasGlow) {
-			let linesStyleOfGlow = { ...linesStyle }; // shallow copy is important!
-			linesStyleOfGlow.hasGlow = false;
-			linesStyleOfGlow.isGlow = true;
+		if (coalesce(mStyle, gStyle, 'lines.hasGlow')) {
+			let mStyleOfGlow = { ...mStyle }; // shallow copy is important!
+			mStyleOfGlow.lines.hasGlow = false;
+			mStyleOfGlow.lines.isGlow = true;
 
 			//
-			addLayer(
-				map,
-				feature,
-				FEATURES,
-				sourceId,
-				layerId,
-				geoJSONStyle,
-				groupNames,
-				linesStyleOfGlow,
-				pointsStyle
-			);
+			addLayer(map, feature, FEATURES, sourceId, layerId, gStyle, mStyleOfGlow, groupNames);
 
 			// before continuing, make sure isGlow is false for normal line
-			linesStyle.isGlow = false;
+			mStyle.lines.isGlow = false;
 		}
 
-		const lineWidthFactor = linesStyle?.isGlow ? linesStyle?.glowStyle?.lineWidthFactor || 2.5 : 1; // glow must be wider
+		const lineWidthGlowFactor = mStyle?.lines?.isGlow
+			? coalesce(mStyle, gStyle, 'lines.glowStyle.lineWidthGlowFactor')
+			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
 		const layerIdGlow = `${layerId}-glow`;
 
-		console.log(linesStyle?.isGlow, linesStyle?.lineWidthForce, lineWidthFactor);
-
 		map.addLayer({
-			id: linesStyle?.isGlow ? layerIdGlow : layerId,
+			id: mStyle?.lines?.isGlow ? layerIdGlow : layerId,
 			type: 'line',
 			source: sourceId,
 			metadata: {
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: linesStyle.setInvisible ? 'none' : 'visible'
-				// 'line-join': 'round',
-				// 'line-cap': 'round'
+				visibility: coalesce(mStyle, gStyle, 'lines.setInvisible') ? 'none' : 'visible',
+				'line-join': coalesce(mStyle, gStyle, 'lines.lineJoin'),
+				'line-cap': coalesce(mStyle, gStyle, 'lines.lineCap')
 			},
 			paint: {
-				'line-color': linesStyle?.lineColorForce || [
-					'coalesce',
-					['get', 'lineColor'],
-					getFromStyle(geoJSONStyle, 'lineColor') || linesStyle?.lineColor || 'red'
-				],
-				'line-width':
-					linesStyle?.lineWidthForce * lineWidthFactor ||
-					getFromStyle(geoJSONStyle, 'lineWidth') || [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						0,
-						(linesStyle?.lineWidthAtZoom0 || 4) * lineWidthFactor,
-						16,
-						(linesStyle?.lineWidthAtZoom16 || 8) * lineWidthFactor
-					] ||
-					linesStyle?.lineWidth * lineWidthFactor,
-				'line-opacity': getFromStyle(geoJSONStyle, 'lineOpacity') || linesStyle?.lineOpacity || 1,
-				'line-blur': linesStyle?.isGlow
-					? linesStyle?.glowStyle?.lineBlur || 5
-					: linesStyle?.lineBlur || 0,
-				'line-dasharray': getDash(feature, geoJSONStyle) || linesStyle?.lineDashArray || [1, 0]
-			}
-			// filter: ['==', ['get', 'id'], feature.properties.id]
+				'line-color': coalesce(mStyle, gStyle, 'lines.lineColor'),
+				'line-width': coalesce(mStyle, gStyle, 'lines.lineWidth') * lineWidthGlowFactor,
+				//! DEBUG Mixing lineWidth with lineWidthArray will NOT work! try with nested coalesce, but I fear, this won't not work either
+				// 'line-width':
+				// 	(coalesce(mStyle, gStyle, 'lines.lineWidth') || [
+				// 		'interpolate',
+				// 		['linear'],
+				// 		['zoom'],
+				// 		//!? Can I spread? ...coalesce(mStyle?.lines, 'lineWidthArray') to have as many as I need?
+				// 		//! -> maybe even put 'linear' and 'zoom' on [0] and [1] and start array at [2]
+				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[0],
+				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[1],
+				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[2],
+				// 		coalesce(mStyle, gStyle, 'lines.lineWidthArray')[3]
+				// 	]) * lineWidthGlowFactor,
+				'line-opacity': coalesce(mStyle, gStyle, 'lines.lineOpacity'),
+				'line-blur': mStyle?.lines?.isGlow
+					? coalesce(mStyle, gStyle, 'lines.glowStyle.lineBlur')
+					: coalesce(mStyle, gStyle, 'lines.lineBlur'),
+				'line-dasharray':
+					getDash(feature, gStyle) || coalesce(mStyle, gStyle, 'lines.lineDashArray')
+			},
+			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
-		// Adjustments
+		// Manual Adjustments
 		// Make sure glow is not dashed
-		if (linesStyle?.isGlow) {
+		if (mStyle?.lines?.isGlow) {
 			map.setPaintProperty(layerIdGlow, 'line-dasharray', null);
 		}
 
@@ -344,7 +422,7 @@ export function addLayer(
 		if (FEATURES) {
 			if (FEATURES.allLoaded_layerIds) {
 				FEATURES.allLoaded_layerIds.push(layerId);
-				if (linesStyle?.hasGlow) {
+				if (mStyle?.lines?.hasGlow) {
 					const glow_id = `${layerId}-glow`;
 					addLine(glow_id, true);
 					FEATURES.allLoaded_layerIds.push(glow_id);
@@ -356,7 +434,7 @@ export function addLayer(
 		// Polygons
 		// --------------------------------------
 	} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
-		const layerIdContour = layerId + '-contour';
+		// Filling
 		map.addLayer({
 			id: layerId,
 			type: 'fill',
@@ -365,21 +443,20 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: 'none' // Hidden by default
+				visibility: coalesce(mStyle, gStyle, 'polygons.setInvisible') ? 'none' : 'visible'
 			},
 			paint: {
-				'fill-color': [
-					'coalesce',
-					['get', 'fillColor'],
-					getFromStyle(geoJSONStyle, 'fillColor') || 'yellow'
-				],
-				'fill-pattern': 'red-striped-pattern',
-				'fill-opacity': 0.5,
-				'fill-antialias': true // to on the safe side
+				'fill-color': coalesce(mStyle, gStyle, 'polygons.fillColor'),
+				'fill-pattern': coalesce(mStyle, gStyle, 'polygons.fillPattern'),
+				'fill-opacity': coalesce(mStyle, gStyle, 'polygons.fillOpacity'),
+				'fill-antialias': coalesce(mStyle, gStyle, 'polygons.fillAntialias')
 			},
-			// filter: ['==', ['get', 'id'], feature.properties.id]
-			maxzoom: 20 // Adjust this depending on your use case
+			maxzoom: coalesce(mStyle, gStyle, 'polygons.maxZoom'),
+			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
+
+		// ContourLine
+		const layerIdContour = `${layerId}-contour`;
 		map.addLayer({
 			id: layerIdContour,
 			type: 'line',
@@ -388,26 +465,16 @@ export function addLayer(
 				groupNames: groupNames
 			},
 			layout: {
-				visibility: 'none' // Hidden by default
+				visibility: coalesce(mStyle, gStyle, 'polygons.setInvisible') ? 'none' : 'visible'
 			},
 			paint: {
-				'line-color': [
-					'coalesce',
-					['get', 'lineColor'],
-					getFromStyle(geoJSONStyle, 'lineColor') || 'darkblue'
-				],
-				'line-width': [
-					'interpolate',
-					['linear'],
-					['zoom'], // followed by zoom-level, thickness, zoom-level, thickness, ...
-					8,
-					0.1,
-					15,
-					6
-				],
-				'line-opacity': 1
-			}
-			// filter: ['==', ['get', 'id'], feature.properties.id]
+				'line-color': coalesce(mStyle, gStyle, 'polygons.lineColor'),
+				'line-width': coalesce(mStyle, gStyle, 'polygons.lineWidth'),
+				// This won't work, see above for explanation
+				// 'line-width': ['interpolate', ['linear'], ['zoom']],
+				'line-opacity': coalesce(mStyle, gStyle, 'polygons.lineOpacity')
+			},
+			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
 		// PUSH TO FEATURES
@@ -420,6 +487,7 @@ export function addLayer(
 
 		// --------------------------------------
 		// Circles
+		//! TODO: FEATURE NOT IMPLEMENTED YET
 		// --------------------------------------
 	} else if (feature.properties.shape === 'Circle' && feature.properties.radius) {
 		// Add circle as Point layer styled as a circle
@@ -432,13 +500,13 @@ export function addLayer(
 			},
 			paint: {
 				'circle-radius': feature.properties.radius,
-				'circle-color': geoJSONStyle.color || '#f30',
+				'circle-color': gStyle.color || '#f30',
 				'circle-opacity': 0.5
 			},
 			layout: {
 				visibility: 'none' // Hidden by default
-			}
-			// filter: ['==', ['get', 'id'], feature.properties.id]
+			},
+			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
 		// PUSH TO FEATURES
