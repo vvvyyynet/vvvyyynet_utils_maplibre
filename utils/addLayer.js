@@ -20,8 +20,32 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	}, {});
 }
 
+function constructId(base, layerId) {
+	return [[base].prefix, layerId, [base].postfix].join([base].sep);
+}
+
+function setAtPath(object, path, value) {
+	return path.split('.').reduce((acc, key, idx, arr) => {
+		// Ensure the intermediate keys are objects or arrays
+		if (idx < arr.length - 1 && acc[key] !== undefined && typeof acc[key] !== 'object') {
+			console.warn(
+				`Prevented from overwriting ${path} at '${arr
+					.slice(0, idx + 1)
+					.join('.')}' because the value is not an object (value is ${typeof acc[key]})`
+			);
+			return acc; // Exit early without changing the object
+		}
+
+		// Initialize the key as an empty object if it's the intermediate part of the path
+		acc[key] = idx === arr.length - 1 ? value : acc[key] || {};
+
+		return acc[key]; // Continue with the next level of the path
+	}, object);
+}
+
 function coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowDirectAccess) {
 	const forcePath = `force.${path}`;
+
 	// Slow version with output (only for debugging)
 	const val1 = getNestedProperty(manualStyleset, forcePath);
 	const val2 = getNestedProperty(featureStyleset, path);
@@ -49,18 +73,6 @@ function coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowD
 	// 	getNestedProperty(manualStyleset, path) ||
 	// 	getNestedProperty(defaultStyleset, path)
 	// );
-}
-
-function setAlltoValue(object, path, value) {
-	// Set a specific path both on manualStyleset and on featureStyleset to a certain value (create the path if it does not exist)
-	path.split('.').reduce((acc, key, idx, arr) => {
-		acc[key] = idx === arr.length - 1 ? value : acc[key] || {};
-		return acc[key];
-	}, object);
-
-	// A hardcoded example for object = manualStyleset and path='lines.hasGlow'
-	// manualStyleset.lines = manualStyleset.lines || {};
-	// manualStyleset.lines.hasGlow = value;
 }
 
 function makeLayerInteractive(map, layerId) {
@@ -135,17 +147,47 @@ function makeLayerInteractive(map, layerId) {
 export function addLayer(
 	map,
 	feature,
-	FEATURES = null,
 	sourceId,
 	layerId,
 	featureStyleset = {}, // styling as read from geoJSON
 	manualStyleset = {}, // manual styling
 	groupNames = [],
 	{
+		idCollector = {
+			all: [],
+			points: [],
+			pointBackdrops: [],
+			lines: [],
+			lineGlows: [],
+			polygons: [],
+			polygonFills: [],
+			polygonContours: [],
+			polygonContourGlows: [],
+			polygonPoints: []
+		},
 		allowDirectAccess = false,
-		defaultStyleset = {} // default styles
+		defaultStyleset = {}, // default styles
+		idConstructors = {
+			point: { prefix: 'POINT', postfix: '', sep: '-' },
+			pointBackdrop: { prefix: 'POINTBACKDROP', postfix: '', sep: '-' },
+			line: { prefix: 'LINE', postfix: '', sep: '-' },
+			lineGlow: { prefix: 'LINEGLOW', postfix: '', sep: '-' },
+			polygonFill: { prefix: 'POLYGONFILL', postfix: '', sep: '-' },
+			PolygonContour: { prefix: 'POLYGONCONTOURS', postfix: '', sep: '-' },
+			PolygonContourGlow: { prefix: 'POLYGONCONTOURSGLOW', postfix: '', sep: '-' },
+			polygonPoints: { prefix: 'POLYGONPOINTS', postfix: '', sep: '-' }
+		}
 	}
 ) {
+	const layerIdPoint = constructId(idConstructors.point, layerId);
+	const layerIdPointBackdrop = constructId(idConstructors.pointBackdrop, layerId);
+	const layerIdLine = constructId(idConstructors.line, layerId);
+	const layerIdLineGlow = constructId(idConstructors.lineGlow, layerId);
+	const layerIdPolygonFill = constructId(idConstructors.polygonFill, layerId);
+	const layerIdPolygonContour = constructId(idConstructors.PolygonContour, layerId);
+	const layerIdPolygonContourGlow = constructId(idConstructors.PolygonContourGlow, layerId);
+	const layerIdPolygonPoints = constructId(idConstructors.polygonPoints, layerId);
+
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
 	// Test for missing id
@@ -185,7 +227,7 @@ export function addLayer(
 			// Add simple circles
 			case 'circle':
 				map.addLayer({
-					id: layerId,
+					id: layerIdPoint,
 					type: 'circle',
 					source: sourceId,
 					layout: {
@@ -209,8 +251,9 @@ export function addLayer(
 			case 'icon':
 				// Add backdrop circle
 				if (c('points.icon.hasIconBackdrop')) {
+					//! TODO: this could be rewritten similar to glow, where addLayer is calling itself with a modified setyleset.
 					map.addLayer({
-						id: `${layerId}-background`,
+						id: layerIdPointBackdrop,
 						type: 'circle',
 						source: sourceId,
 						metadata: {
@@ -235,7 +278,7 @@ export function addLayer(
 
 				// Add custom icon
 				map.addLayer({
-					id: layerId,
+					id: layerIdPoint,
 					type: 'symbol',
 					source: sourceId,
 					metadata: {
@@ -259,20 +302,16 @@ export function addLayer(
 				break;
 		}
 
-		// PUSH TO FEATURES
-		if (FEATURES) {
-			if (FEATURES.allLoaded_layerIds) {
-				FEATURES.allLoaded_layerIds.push(layerId);
-			}
-			if (FEATURES.allLoadedPoints_layerIds) {
-				FEATURES.allLoadedPoints_layerIds.push(`${layerId}-background`);
-			}
-			if (FEATURES.allLoadedPoints_Ids) {
-				FEATURES.allLoadedPoints_Ids.push({
-					source: sourceId,
-					id: layerId
-				});
-			}
+		// PUSH TO ID-COLLECTOR
+		idCollector.all.push(layerIdPoint);
+		idCollector.points.push(layerIdPoint);
+		if (c('points.icon.hasIconBackdrop')) {
+			idCollector.all.push(layerIdPointBackdrop);
+			idCollector.Backdrops.push(layerIdPointBackdrop);
+			idCollector.dict.push({
+				source: sourceId,
+				id: layerIdPointBackdrop
+			});
 		}
 
 		// --------------------------------------
@@ -284,42 +323,33 @@ export function addLayer(
 			const manualStylesetOfGlow = { ...manualStyleset }; // shallow copy is important!
 
 			// set all hasGlow properties false
-			setAlltoValue(manualStyleset, 'lines.hasGlow', false);
-			setAlltoValue(manualStyleset, 'force.lines.hasGlow', false);
-			setAlltoValue(featureStyleset, 'lines.hasGlow', false);
-			setAlltoValue(featureStyleset, 'force.lines.hasGlow', false);
+			setAtPath(manualStyleset, 'lines.hasGlow', false);
+			setAtPath(manualStyleset, 'force.lines.hasGlow', false);
+			setAtPath(featureStyleset, 'lines.hasGlow', false);
+			setAtPath(featureStyleset, 'force.lines.hasGlow', false);
 
-			// setAlltoValue(featureStyleset, 'hasGlow', false); //! DEBUG: This is an implementation for the non-nested featureStyleset version, but be careful not to mix co-existing glows on different feature types!
-			setAlltoValue(manualStylesetOfGlow, 'lines.isGlow', true);
-			setAlltoValue(manualStylesetOfGlow, 'force.lines.isGlow', true);
+			// setAtPath(featureStyleset, 'hasGlow', false); //! DEBUG: This is an implementation for the non-nested featureStyleset version, but be careful not to mix co-existing glows on different feature types!
+			setAtPath(manualStylesetOfGlow, 'lines.isGlow', true);
+			setAtPath(manualStylesetOfGlow, 'force.lines.isGlow', true);
 
 			//
-			addLayer(
-				map,
-				feature,
-				FEATURES,
-				sourceId,
-				layerId,
-				featureStyleset,
-				manualStylesetOfGlow,
-				groupNames,
-				{
-					allowDirectAccess: allowDirectAccess,
-					defaultStyleset: defaultStyleset
-				}
-			);
+			addLayer(map, feature, sourceId, layerId, featureStyleset, manualStylesetOfGlow, groupNames, {
+				idCollector: idCollector,
+				allowDirectAccess: allowDirectAccess,
+				defaultStyleset: defaultStyleset
+			});
 
 			// before continuing, make sure isGlow is false for normal line
-			setAlltoValue(manualStyleset, 'lines.isGlow', false);
-			setAlltoValue(manualStyleset, 'force.lines.isGlow', false);
+			setAtPath(manualStyleset, 'lines.isGlow', false);
+			setAtPath(manualStyleset, 'force.lines.isGlow', false);
 		}
-		const layerIdGlow = `${layerId}-glow`;
+
 		const lineWidthGlowFactor = manualStyleset?.lines?.isGlow
 			? c('lines.glow.lineWidthGlowFactor')
 			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
 
 		map.addLayer({
-			id: manualStyleset?.lines?.isGlow ? layerIdGlow : layerId,
+			id: manualStyleset?.lines?.isGlow ? layerIdLineGlow : layerIdLine,
 			type: 'line',
 			source: sourceId,
 			metadata: {
@@ -334,9 +364,18 @@ export function addLayer(
 			},
 			paint: {
 				...accumulateKeyValuePairs([
-					['line-dasharray', c('lines.lineDashArray')],
-					['line-color', c('lines.lineColor')],
-					['line-opacity', c('lines.lineOpacity')],
+					[
+						'line-dasharray',
+						manualStyleset?.lines?.isGlow ? c('lines.glow.lineDashArray') : c('lines.lineDashArray')
+					],
+					[
+						'line-color',
+						manualStyleset?.lines?.isGlow ? c('lines.glow.lineColor') : c('lines.lineColor')
+					],
+					[
+						'line-opacity',
+						manualStyleset?.lines?.isGlow ? c('lines.glow.lineOpacity') : c('lines.lineOpacity')
+					],
 					['line-width', c('lines.lineWidth') * lineWidthGlowFactor],
 					[
 						'line-blur',
@@ -360,23 +399,13 @@ export function addLayer(
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
-		// Manual Adjustments
-		// Make sure glow is not dashed
-		if (manualStyleset?.lines?.isGlow) {
-			map.setPaintProperty(layerIdGlow, 'line-dasharray', null);
-		}
+		// PUSH TO ID-COLLECTOR
+		idCollector.all.push(layerIdLine);
+		idCollector.lines.push(layerIdLine);
 
-		// PUSH TO FEATURES
-		if (FEATURES) {
-			if (FEATURES.allLoaded_layerIds) {
-				FEATURES.allLoaded_layerIds.push(layerId);
-				if (manualStyleset?.lines?.hasGlow) {
-					const glow_id = `${layerId}-glow`;
-					addLine(glow_id, true); //??
-					FEATURES.allLoaded_layerIds.push(glow_id);
-				}
-			}
-			console.log('FEATURES: ', FEATURES);
+		if (manualStyleset?.lines?.isGlow) {
+			idCollector.all.push(layerIdLineGlow);
+			idCollector.lineGlows.push(layerIdLineGlow);
 		}
 
 		// --------------------------------------
@@ -384,9 +413,8 @@ export function addLayer(
 		// --------------------------------------
 	} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
 		// Filling
-
 		map.addLayer({
-			id: layerId,
+			id: layerIdPolygonFill,
 			type: 'fill',
 			source: sourceId,
 			metadata: {
@@ -411,14 +439,12 @@ export function addLayer(
 		});
 
 		// ContourLine
-		const layerIdContour = `${layerId}-contour`;
-
 		const lineWidthGlowFactor = manualStyleset?.polygons?.isGlow
 			? c('poolygon.glow.lineWidthGlowFactor')
 			: 1; // set 1 for nonGlow line (note, that two lines will be added on top of each other!)
 
 		map.addLayer({
-			id: layerIdContour,
+			id: layerIdPolygonContour,
 			type: 'line',
 			source: sourceId,
 			metadata: {
@@ -432,26 +458,57 @@ export function addLayer(
 			},
 			paint: {
 				...accumulateKeyValuePairs([
-					['line-dasharray', c('polygons.lineDashArray')],
-					['line-color', c('polygons.lineColor')],
-					['line-opacity', c('polygons.lineOpacity')],
-					['line-width', c('polygons.lineWidth') * lineWidthGlowFactor], //! DEBUG undefined*Number = NaN... does this cause any problems? Moreover, if no defaultStyleset is provided this won't work, since multiplication is not forwarded to maplibregl... but I think this is fine, but needs to be documented.
-					//! TODO: implement 'line-width': ['interpolate', ['linear'], ['zoom']],
+					[
+						'line-dasharray',
+						manualStyleset?.polygons?.isGlow
+							? c('polygons.glow.lineDashArray')
+							: c('polygons.lineDashArray')
+					],
+					[
+						'line-color',
+						manualStyleset?.polygons?.isGlow
+							? c('polygons.glow.lineColor')
+							: c('polygons.lineColor')
+					],
+					[
+						'line-opacity',
+						manualStyleset?.polygons?.isGlow
+							? c('polygons.glow.lineOpacity')
+							: c('polygons.lineOpacity')
+					],
 					[
 						'line-blur',
 						manualStyleset?.polygons?.isGlow ? c('polygons.glow.lineBlur') : c('polygons.lineBlur')
-					]
+					],
+					[('line-width', c('polygons.lineWidth') * lineWidthGlowFactor)] //! DEBUG undefined*Number = NaN... does this cause any problems? Moreover, if no defaultStyleset is provided this won't work, since multiplication is not forwarded to maplibregl... but I think this is fine, but needs to be documented.
+					//! TODO: implement 'line-width': ['interpolate', ['linear'], ['zoom']],
 				])
 			},
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
 
-		// PUSH TO FEATURES
-		if (FEATURES) {
-			if (FEATURES.allLoaded_layerIds) {
-				FEATURES.allLoaded_layerIds.push(layerId);
-				FEATURES.allLoaded_layerIds.push(layerIdContour);
+		// PUSH TO ID-COLLECTOR
+		if (manualStyleset?.polygons?.isFill) {
+			idCollector.all.push(layerIdPolygonFill);
+			idCollector.polygons.push(layerIdPolygonFill);
+			idCollector.polygonFills.push(layerIdPolygonFill);
+		}
+		if (manualStyleset?.polygons?.isLine) {
+			idCollector.all.push(layerIdPolygonContour);
+			idCollector.polygons.push(layerIdPolygonContour);
+			idCollector.polygonContours.push(layerIdPolygonContour);
+
+			if (manualStyleset?.polygons?.isGlow) {
+				idCollector.all.push(layerIdPolygonContourGlow);
+				idCollector.polygons.push(layerIdPolygonContourGlow);
+				idCollector.polygonContours.push(layerIdPolygonContourGlow);
+				idCollector.polygonContourGlows.push(layerIdPolygonContourGlow);
 			}
+		}
+		if (manualStyleset?.polygons?.isPoints) {
+			idCollector.all.push(layerIdPolygonPoints);
+			idCollector.polygons.push(layerIdPolygonPoints);
+			idCollector.polygonPoints.push(layerIdPolygonPoints);
 		}
 
 		// --------------------------------------
@@ -477,16 +534,10 @@ export function addLayer(
 			},
 			filter: ['==', ['get', 'id'], feature.properties.id]
 		});
-
-		// PUSH TO FEATURES
-		if (FEATURES) {
-			if (FEATURES.allLoaded_layerIds) {
-				FEATURES.allLoaded_layerIds.push(layerId);
-			}
-		}
 	}
 
 	// -------------------------------------------
 	// Make layer interactive
 	makeLayerInteractive(map, layerId);
+	return idCollector;
 }

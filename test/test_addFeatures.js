@@ -94,11 +94,12 @@ export function test_addFeatures(map) {
           }
         },
         lines: {
-          lineDashArray: [5,5],
+          lineDashArray: [4,4],
           lineWidth: 10,
           lineCap: 'round',
           lineJoin: 'round',
-          // glow: { lineWidthGlowFactor: 5, lineBlur: 5 }
+          hasGlow: true,
+          glow: { lineWidthGlowFactor: 2, lineBlur: 5, lineColor: 'red', lineDashArray: [2,2] }
         },
         polygons: {
 

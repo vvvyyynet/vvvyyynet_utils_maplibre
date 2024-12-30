@@ -3,8 +3,19 @@ export function addFeatures(
 	map,
 	FeatColl,
 	{
+		idCollector = {
+			all: [],
+			points: [],
+			pointBackdrops: [],
+			lines: [],
+			lineGlows: [],
+			polygons: [],
+			polygonFills: [],
+			polygonContours: [],
+			polygonContourGlows: [],
+			polygonPoints: []
+		},
 		sortByTypesArray = false, // falsy or array
-		FEATURES = undefined,
 		id = undefined,
 		id_prefix = undefined,
 		manualStyleset = undefined,
@@ -45,16 +56,16 @@ export function addFeatures(
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].join('-');
 		const featureStyleset = feature.properties.style;
-		addLayer(
+		idCollector = addLayer(
 			map,
 			feature,
-			FEATURES,
 			sourceId,
 			layerId,
 			featureStyleset,
 			manualStyleset,
 			groupNames,
 			{
+				idCollector: idCollector,
 				defaultStyleset: defaultStyleset,
 				allowDirectAccess: allowDirectAccess
 			}
