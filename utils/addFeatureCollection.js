@@ -1,5 +1,5 @@
-import { addLayer } from './addLayer';
-export function addFeatures(
+import { addLayer } from 'vvvyyynet_utils_maplibre/utils/addLayer';
+export function addFeatureCollection(
 	map,
 	FeatColl,
 	{

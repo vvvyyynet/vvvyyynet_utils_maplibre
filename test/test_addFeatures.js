@@ -1,4 +1,4 @@
-import { addFeatures } from '../utils/addFeatures';
+import { addFeatures } from 'vvvyyynet_utils_maplibre/utils/addFeatureCollection';
 import {styleset} from './DEFAULT_STYLES';
 
 console.log('dStyles: ', styleset);

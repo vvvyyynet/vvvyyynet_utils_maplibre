@@ -22,7 +22,7 @@ import { registerSVG } from './utils/registerSVG';
 
 //----------------------------------------------
 // Add Features
-import { addFeatures } from './utils/addFeatures'; //! NEW
+import { addFeatureCollection } from './utils/addFeatureCollection'; //! NEW
 import { addLayer } from './utils/addLayer';
 
 //----------------------------------------------
@@ -66,7 +66,7 @@ export {
 	drawTestFeatures,
 	drawTestPoints,
 	drawTestLines,
-	addFeatures,
+	addFeatureCollection,
 	addFeatureGroupsFromDB,
 	addStaticFeatures,
 	addLayer,
