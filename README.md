@@ -30,6 +30,8 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - **Fill-Pattern:** Unfortunately, the `fill-pattern` property cannot be unset. Either set it to the id of a registered image (could be completely transparent...), or remove the line. This is sort of a restriction for a standalone-wrapper-function that does not do the wrapping part... //! SOLVE THIS!
 - **LineDashArray and Glow:** Since line-dasharray is in units of line-width it will affect the glow differently leading to two unsynced dashed lines. To compensate for this, all values of glow.lineDashArray property must be set inversely proportional.
 
+**LineGlow:** Available for lines and contourlines. In addition to the `line-blur` property, you can set a different color. Internally, a second layer is drawn with a pre-/postfixed layerId. The glow must be slightly wider than the line. You can either provide a `lineWidth` or a multiplication factor (`lineWidthGlowFactor`). Note that the latter not work, if the lineWidth defaults to the maplibregl-fallback linewidth (wich would be very tiny anyways), since the multiplication is handled inside the wrapper but not forwarded to maplibregl...
+
 ### Shared features
 
 ### Features for clone-dragging
@@ -48,8 +50,11 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - fix: move imports of CAPITALISED GLOBALS like FEATURES etc. to function arguments
 - fix: improve the checks and fallbacks inside addLayer for the various nested stylings
 - refactor: consider moving points_style inside style alltogether
+- fix: copy lineCap of Glow from regular line
 
 ### Features
+- feat: unset-all inside force
+- feat: unset specific inside force (e.g. fillPattern or iconImage)
 - feat: appart from 'circle'... are there any other maplibregl-default icons?
 
 ### Chore and Refactor

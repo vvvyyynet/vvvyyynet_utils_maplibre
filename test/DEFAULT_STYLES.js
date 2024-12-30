@@ -17,10 +17,10 @@ export const styleset = {
 			circleStrokeWidth: 1
 		},
 		// ICON
-		icon: {
-			hasIconBackdrop: false,
+		symbol: {
+			hasBackdropCircle: false,
 			// BACKDROP CIRCLE
-			backdrop: {
+			backdropCircle: {
 				// Paint properties
 				setInvisible: false,
 				circleRadius: 18,

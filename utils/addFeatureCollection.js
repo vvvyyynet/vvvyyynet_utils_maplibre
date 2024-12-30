@@ -1,26 +1,16 @@
-import { addLayer } from 'vvvyyynet_utils_maplibre/utils/addLayer';
+import { addFeature } from './addFeature';
+
 export function addFeatureCollection(
 	map,
 	FeatColl,
 	{
-		idCollector = {
-			all: [],
-			points: [],
-			pointBackdrops: [],
-			lines: [],
-			lineGlows: [],
-			polygons: [],
-			polygonFills: [],
-			polygonContours: [],
-			polygonContourGlows: [],
-			polygonPoints: []
-		},
+		idCollector = undefined,
 		sortByTypesArray = false, // falsy or array
 		id = undefined,
 		id_prefix = undefined,
 		manualStyleset = undefined,
 		defaultStyleset = undefined,
-		groupNames = undefined,
+		groups = undefined,
 		allowDirectAccess = undefined
 	}
 ) {
@@ -29,16 +19,17 @@ export function addFeatureCollection(
 	// - FeatColl: featureCollection (in geojson format)
 	// - (id)
 	// - (id_prefix): id_prefix for the ids (e.g. "static", "database", ...)
-	// - (groupNames): used for toggling/filtering.
+	// - (groups): used for toggling/filtering.
 	// - (style): used for styling, can be contained in the geojson > properties > style.
 
-	// Generate random default id
+	// Generate randomized fallback id
 	if (!id) {
 		id = String(Math.random()).slice(2);
 	}
 
 	// Generate sourceId
-	const sourceId = id_prefix ? [id_prefix, id].join('-') : id;
+	const sourceId = [id_prefix, id].filter(Boolean).join('-');
+	
 	// Add Source if not exist (//! BEWARE: expect HMR errors, if you force readding!)
 	if (!map.getSource(sourceId)) {
 		map.addSource(sourceId, {
@@ -54,21 +45,23 @@ export function addFeatureCollection(
 
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
-		const layerId = [id_prefix, id, index + 1].join('-');
+		const layerId = [id_prefix, id, index + 1].filter(Boolean).join('-');
 		const featureStyleset = feature.properties.style;
-		idCollector = addLayer(
+		({map:map, idCollector:idCollector} = addFeature(
 			map,
 			feature,
 			sourceId,
 			layerId,
 			featureStyleset,
 			manualStyleset,
-			groupNames,
+			groups,
 			{
 				idCollector: idCollector,
 				defaultStyleset: defaultStyleset,
 				allowDirectAccess: allowDirectAccess
 			}
-		);
+		));
 	});
+
+	return {map: map, idCollector:idCollector};
 }

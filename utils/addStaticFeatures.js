@@ -1,4 +1,4 @@
-import {addFeatures} from './addFeatures'
+import { addFeatureCollection } from './addFeatureCollection';
 
 // Add Static Features
 export function addStaticFeatures(map, staticURLs) {
@@ -8,8 +8,17 @@ export function addStaticFeatures(map, staticURLs) {
 		try {
 			const FeatColl_geojson = await fetch(staticURL);
 			const FeatColl = await FeatColl_geojson.json();
-			const groupNames = FeatColl.features[0].metadata?.groupNames || undefined;
-			addFeatures(map, FeatColl, {id: FeatColl.properties.id, prefix: 'static', groupNames: groupNames, style: FeatColl.properties.style}); 
+
+			addFeatureCollection(map, FeatColl, {
+				idCollector: undefined,
+				sortByTypesArray: undefined,
+				id: FeatColl.properties.id,
+				id_prefix: 'static',
+				manualStyleset: undefined,
+				defaultStyleset: undefined,
+				groups: FeatColl.features[0].metadata?.groups || undefined,
+				allowDirectAccess: undefined
+			});
 		} catch (error) {
 			console.warn(error);
 		}

@@ -1,5 +1,5 @@
-import { addFeatures } from 'vvvyyynet_utils_maplibre/utils/addFeatureCollection';
-import {styleset} from './DEFAULT_STYLES';
+import { addFeatureCollection } from '../utils/addFeatureCollection';
+import { styleset } from './DEFAULT_STYLES';
 
 console.log('dStyles: ', styleset);
 
@@ -7,30 +7,24 @@ export function test_addFeatures(map) {
 	const FeatColl = {
 		type: 'FeatureCollection',
 		features: [
-
-      // A Point
+			// A Point
 			{
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [7.042569, 46.881066] },
 				properties: {
 					id: '49f56x10831cs7p',
 					name: 'Römisches Amphitheater Aventicum',
-					style: {
-						circleColor: 'red',
-						points: {
-							type: 'icon',
-							icon: { iconImage: 'butterfly' }
-						}
-					}
+					temperature: 100,
+					style: {}
 				}
 			},
-
-      // A Line
+			// A Line
 			{
 				type: 'Feature',
 				properties: {
 					id: 'feature-1',
 					name: 'Connecting Lines',
+					myLineWidth: 20,
 					style: {}
 				},
 				geometry: {
@@ -42,22 +36,22 @@ export function test_addFeatures(map) {
 					]
 				}
 			},
-      // Two more Points
+			// Two more Points
 			{
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [8.7933439, 46.1678596] },
-				properties: { id: 'feature-2', name: 'Castello Visconteo' }
+				properties: { id: 'feature-2', name: 'Castello Visconteo', temperature: 20 }
 			},
 			{
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [6.9762993, 46.3150334] },
-				properties: { id: 'feature-3', name: "Château d'Aigle" }
+				properties: { id: 'feature-3', name: "Château d'Aigle", temperature: 10 }
 			},
 
-      // Polygon
+			// Polygon
 			{
 				type: 'Feature',
-				properties: { id: 'feature-4' },
+				properties: { id: 'feature-4', mycolor: 'purple' },
 				geometry: {
 					type: 'Polygon',
 					coordinates: [
@@ -80,45 +74,45 @@ export function test_addFeatures(map) {
 	};
 
 	// Add Features
-	addFeatures(map, FeatColl, {
+	let idCollector;
+	({ map: map, idCollector: idCollector } = addFeatureCollection(map, FeatColl, {
 		id: 'test',
 		// sortByTypesArray: ['lines', 'points', 'polygons'],
 		// allowDirectAccess: true,
 		manualStyleset: {
 			force: {
-        points: {
-          type: 'circle',
-          circle: {
-            circleRadius: 16,
-            circleColor: 'lightblue'
-          }
-        },
-        lines: {
-          lineDashArray: [4,4],
-          lineWidth: 10,
-          lineCap: 'round',
-          lineJoin: 'round',
-          hasGlow: true,
-          glow: { lineWidthGlowFactor: 2, lineBlur: 5, lineColor: 'red', lineDashArray: [2,2] }
-        },
-        polygons: {
-
-        }
-      },
-      points: {
-
-      },
-      lines: {
-        lineColor: 'blue',
-      },
-			polygons: {
-				lineWidth: 5,
-				lineColor: 'green',
-				fillColor: 'green',
-				hasGlow: true,
-				glow: { lineWidthGlowFactor: 5, lineBlur: 5 }
+				points: {
+					type: 'circle',
+					circle: {
+						circleRadius: 25,
+						circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
+					}
+				},
+				lines: {
+					lineDashArray: [4, 4],
+					lineCap: 'round',
+					lineJoin: 'round',
+					lineColor: 'black',
+					hasGlow: true,
+					lineWidth: ['interpolate', ['linear'], ['zoom'], 0, 20, 10, 5, 20, 900],
+					glow: {
+						lineWidthGlowFactor: 1.6,
+						lineColor: 'red',
+						lineCap: 'round',
+						lineBlur: 5,
+						lineDashArray: [2, 2]
+					}
+				},
+				polygons: {
+					fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]]
+				}
 			},
-		},
-    defaultStyleset: styleset
-	});
+			points: {},
+			lines: {},
+			polygons: {}
+		}
+		// defaultStyleset: styleset
+	}));
+
+	console.log(idCollector);
 }

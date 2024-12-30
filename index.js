@@ -23,7 +23,8 @@ import { registerSVG } from './utils/registerSVG';
 //----------------------------------------------
 // Add Features
 import { addFeatureCollection } from './utils/addFeatureCollection'; //! NEW
-import { addLayer } from './utils/addLayer';
+import { addFeature } from './utils/addFeature'; //!NEW
+import { addLayer } from './utils/addLayer'; //!NEW
 
 //----------------------------------------------
 // Add Georeferenced Images to Map
@@ -67,9 +68,10 @@ export {
 	drawTestPoints,
 	drawTestLines,
 	addFeatureCollection,
+	addFeature,
+	addLayer,
 	addFeatureGroupsFromDB,
 	addStaticFeatures,
-	addLayer,
 	consoleLogAllLayers,
 	getMapPosition,
 	loadBasemaps,

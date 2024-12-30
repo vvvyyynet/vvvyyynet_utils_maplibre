@@ -1,4 +1,4 @@
-import {addFeatures} from './addFeatures'
+import {addFeatureCollection} from './addFeatureCollection'
 
 // ----------------------
 // Helper Functions
@@ -20,22 +20,32 @@ function decodeHtmlEntities(str) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Add Database Features
-export function addFeatureGroupsFromDB(map, FeatColls) {
-	// console.log('LETS ADD DB-FEATURES: ', FeatColls);
+export function addFeatureGroupsFromDB(map, featColls) {
+	// console.log('LETS ADD DB-FEATURES: ', featColls);
 
 	// Loop through all FeatureGroups
-	FeatColls.forEach((FeatColl) => {
+	featColls.forEach((featColl) => {
 		// Load style, groupnames and features
 		
-		var style = (FeatColl.style) ? JSON.parse(`{${decodeHtmlEntities(FeatColl.style)}}`) : undefined;
-		var groupNames = (FeatColl.groupnames) ? JSON.parse(decodeHtmlEntities(FeatColl.groupnames)) : undefined; //!BEWARE groupNames vs. groupnames (unfortunately, I set up PostgreSQL with unquoted identifiers, so it is caseinsensitive!!)
-		var featureCollection = (FeatColl.geojson_string) ? JSON.parse(decodeHtmlEntities(FeatColl.geojson_string)) : undefined;
+		var style = (featColl.style) ? JSON.parse(`{${decodeHtmlEntities(featColl.style)}}`) : undefined;
+		var featColl = (featColl.geojson_string) ? JSON.parse(decodeHtmlEntities(featColl.geojson_string)) : undefined;
 		
-		featureCollection.features.forEach((feature, idx) => {
-			featureCollection.features[idx].properties.title = decodeHtmlEntities(FeatColl.title);
-			featureCollection.features[idx].properties.description = decodeHtmlEntities(FeatColl.description);
+		featColl.features.forEach((feature, idx) => {
+			featColl.features[idx].properties.title = decodeHtmlEntities(featColl.title);
+			featColl.features[idx].properties.description = decodeHtmlEntities(featColl.description);
 		});
 
-		addFeatures(map, featureCollection, {id: FeatColl.id, prefix: 'fromDB', groupNames: groupNames, style: FeatColl.properties.style }); 
+
+		addFeatureCollection(map, featColl, {
+			idCollector: undefined,
+			sortByTypesArray: undefined,
+			id: featColl.properties.id, //! LEGACY: in JWKarte the id was directly on featColl.id
+			id_prefix: 'fromDB',
+			manualStyleset: undefined,
+			defaultStyleset: undefined,
+			groups: (featColl.groups) ? JSON.parse(decodeHtmlEntities(featColl.groups)) : undefined, //!LEGACY: in JWKarte (Postgres-DB) the groups' key was named groupnames (not groups)
+			allowDirectAccess: undefined
+		});
+
 	});
 }
