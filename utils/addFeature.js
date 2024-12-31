@@ -5,12 +5,6 @@ import { addLayer } from './addLayer';
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function getNestedProperty(base, path) {
-	return path.split('.').reduce((obj, key) => {
-		return obj?.[key];
-	}, base);
-}
-
 function accumulateKeyValuePairs(keyvaluepairs) {
 	// Accumulate all key-value pairs with valid value
 	return keyvaluepairs.reduce((acc, [key, value]) => {
@@ -45,71 +39,96 @@ function setAtPath(object, path, value) {
 	}, object);
 }
 
-function coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowDirectAccess) {
+function getNestedProperty(base, path) {
+	return path.split('.').reduce((obj, key) => {
+		return obj?.[key];
+	}, base);
+}
+
+function coalesce(
+	featProps,
+	collStyleset,
+	featStyleset,
+	presetStyleset,
+	path,
+	acceptTopLevelFeatureProps
+) {
 	const forcePath = `force.${path}`;
 
 	// Slow version with output (only for debugging)
-	const val1 = getNestedProperty(manualStyleset, forcePath);
-	const val2 = getNestedProperty(featureStyleset, path);
-	const val3 = getNestedProperty(featureStyleset, path.split('.').pop()); // last element
-	const val4 = getNestedProperty(manualStyleset, path);
-	const val5 = getNestedProperty(defaultStyleset, path);
-	const returnvalue = val1 || val2 || (allowDirectAccess ? val3 : undefined) || val4 || val5;
-	if (path.split('.').pop() == 'lineDashArray') {
-		// if (true) {
-		console.log('path', path);
-		console.log('manualStyleset forced: ', val1);
-		console.log('featureStyleset nested: ', val2);
-		console.log('featureStyleset direct: ', val3);
-		console.log('manualStyleset normal: ', val4);
-		console.log('defaultStyleset: ', val5);
-		console.log(path, returnvalue);
-	}
-	return returnvalue;
+	// const val1 = getNestedProperty(collStyleset, forcePath);
+	// const val2 = getNestedProperty(featStyleset, path);
+	// const val3 = getNestedProperty(featProps, path.split('.').pop()); // last element
+	// const val4 = getNestedProperty(collStyleset, path);
+	// const val5 = getNestedProperty(presetStyleset, path);
+	// const returnvalue =
+	// 	val1 || val2 || (acceptTopLevelFeatureProps ? val3 : undefined) || val4 || val5;
+	// // if (path.split('.').pop() == 'lineDashArray') {
+	// if (true) {
+	// 	console.log('path', path);
+	// 	console.log('collStyleset forced: ', val1);
+	// 	console.log('featStyleset nested: ', val2);
+	// 	console.log('featProps direct: ', val3);
+	// 	console.log('collStyleset normal: ', val4);
+	// 	console.log('presetStyleset: ', val5);
+	// 	console.log(path, returnvalue);
+	// }
+	// return returnvalue;
 
 	// Fast version (will stop calculating as soon as truthy value is found)
-	// return (
-	// 	getNestedProperty(manualStyleset, forcePath) ||
-	// 	getNestedProperty(featureStyleset, path) ||
-	// 	(allowDirectAccess ? getNestedProperty(featureStyleset, path.split('.').pop()) : undefined) ||
-	// 	getNestedProperty(manualStyleset, path) ||
-	// 	getNestedProperty(defaultStyleset, path)
-	// );
+	return (
+		getNestedProperty(collStyleset, forcePath) ||
+		getNestedProperty(featStyleset, path) ||
+		(acceptTopLevelFeatureProps
+			? getNestedProperty(featProps, path.split('.').pop())
+			: undefined) ||
+		getNestedProperty(collStyleset, path) ||
+		getNestedProperty(presetStyleset, path)
+	);
 }
 
-function tweakGlowLineWidth(styleset, type) {
-	// Multiply the lineWidth of glow in a styleset by the lineWidthGlowFactor in the same styleset
+function tweakGlowStyle(styleset, type) {
+	// All replacements will happen on a styleset level.
 	// Input: type = 'lines' or 'polygons'
 
+	// ----------------------
+	// lineCap and lineJoin
+	// ----------------------
+	// If glow.lineCap (glow.lineJoin) is unset, make sure they have the same value as the regular line.
+	if (styleset?.[type] && !styleset?.[type]?.glow?.lineJoin) {
+		// (testing for styleset?.[type]) is important, if styleset={})
+		setAtPath(styleset?.[type], 'glow.lineJoin', styleset?.[type]?.lineJoin);
+	}
+	if (styleset?.[type] && !styleset?.[type]?.glow?.lineCap) {
+		setAtPath(styleset?.[type], 'glow.lineCap', styleset?.[type]?.lineCap);
+	}
+
+	// ----------------------
+	// lineWidth
+	// ----------------------
+	// Multiply the lineWidth of glow in a styleset by the lineWidthGlowFactor in the same styleset
 	// only overwrite, if lineWidth is not set manually
 	if (!styleset?.[type]?.glow?.lineWidth) {
 		// try-catch makes it easier to escape non-existing style-paths or invalid values (e.g. multiplication by a String etc.)
 		try {
 			let lineWidth = JSON.parse(JSON.stringify(styleset[type])).lineWidth; // Deep copy
 
-			console.log('new inside: ', lineWidth);
-			console.log('orig inside: ', styleset[type].lineWidth);
-			console.log('orig glow inside: ', styleset[type].glow.lineWidth);
 			if (typeof lineWidth == 'number') {
 				setAtPath(
-					styleset[type],
+					styleset?.[type],
 					'glow.lineWidth',
-					styleset[type].lineWidth * styleset[type].glow.lineWidthGlowFactor
+					styleset?.[type].lineWidth * styleset?.[type].glow.lineWidthGlowFactor
 				);
 			} else if (Array.isArray(lineWidth) && lineWidth[0] === 'interpolate') {
 				// Indices to multiply: 4, 6, 8, 10, ...
 				for (let i = 0; i < lineWidth.length; i++) {
 					if (i >= 4 && i % 2 === 0) {
-						lineWidth[i] *= styleset[type].glow.lineWidthGlowFactor;
+						lineWidth[i] *= styleset?.[type].glow.lineWidthGlowFactor;
 					}
 				}
-				console.log('new inside: ', lineWidth);
-				console.log('orig inside: ', styleset[type].lineWidth);
-				console.log('orig glow inside: ', styleset[type].glow.lineWidth);
-				setAtPath(styleset[type], 'glow.lineWidth', lineWidth);
+				setAtPath(styleset?.[type], 'glow.lineWidth', lineWidth);
 			}
 		} catch (error) {
-			return styleset;
 			// console.warn(error);
 		}
 	}
@@ -190,8 +209,8 @@ export function addFeature(
 	feature,
 	sourceId,
 	layerId,
-	featureStyleset = {}, // styling as read from geoJSON
-	manualStyleset = {}, // manual styling
+	featStyleset = {}, // styling as read from geoJSON
+	collStyleset = {}, // manual styling
 	groups = [],
 	{
 		idCollector = {
@@ -240,8 +259,8 @@ export function addFeature(
 				}
 			}
 		},
-		allowDirectAccess = false, //! TODO: implement
-		defaultStyleset = {},
+		acceptTopLevelFeatureProps = false, //! TODO: implement
+		presetStyleset = {},
 		idConstructors = {
 			pointCircle: { prefix: 'pointCircle', postfix: '', sep: '-' },
 			pointSymbol: { prefix: 'pointSymbol', postfix: '', sep: '-' },
@@ -306,7 +325,14 @@ export function addFeature(
 	// ---------------------------------------------------------------------------------------
 	// RE-DEFINE COALESCE FUNCTION
 	function c(path) {
-		return coalesce(manualStyleset, featureStyleset, defaultStyleset, path, allowDirectAccess);
+		return coalesce(
+			feature?.properties,
+			collStyleset,
+			featStyleset,
+			presetStyleset,
+			path,
+			acceptTopLevelFeatureProps
+		);
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -388,13 +414,10 @@ export function addFeature(
 		// --------------------------------------
 		if (c('lines.hasGlow')) {
 			// Tweak lineWidth for glow in all stylesets
-			console.log('ORIG:', c('lines.lineWidth'));
-			manualStyleset = tweakGlowLineWidth(manualStyleset, 'lines');
-			manualStyleset.force = tweakGlowLineWidth(manualStyleset.force, 'lines');
-			featureStyleset = tweakGlowLineWidth(featureStyleset, 'lines');
-			defaultStyleset = tweakGlowLineWidth(defaultStyleset, 'lines');
-			console.log(c('lines.glow.lineWidth'));
-			console.log('ORIG:', c('lines.lineWidth'));
+			collStyleset = tweakGlowStyle(collStyleset, 'lines');
+			collStyleset.force = tweakGlowStyle(collStyleset.force, 'lines');
+			featStyleset = tweakGlowStyle(featStyleset, 'lines');
+			presetStyleset = tweakGlowStyle(presetStyleset, 'lines');
 
 			map = addLayer(map, layerId_lineGlow, sourceId, groups, filterId, 'line', c, 'lines.glow');
 
@@ -456,10 +479,10 @@ export function addFeature(
 		// --------------------------------------
 		if (c('polygons.hasGlow')) {
 			// Tweak lineWidth for glow in all stylesets
-			manualStyleset = tweakGlowLineWidth(manualStyleset, 'polygons');
-			manualStyleset.force = tweakGlowLineWidth(manualStyleset.force, 'polygons');
-			featureStyleset = tweakGlowLineWidth(featureStyleset, 'polygons');
-			defaultStyleset = tweakGlowLineWidth(defaultStyleset, 'polygons');
+			collStyleset = tweakGlowStyle(collStyleset, 'polygons');
+			collStyleset.force = tweakGlowStyle(collStyleset.force, 'polygons');
+			featStyleset = tweakGlowStyle(featStyleset, 'polygons');
+			presetStyleset = tweakGlowStyle(presetStyleset, 'polygons');
 
 			map = addLayer(
 				map,

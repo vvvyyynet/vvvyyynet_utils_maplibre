@@ -1,8 +1,6 @@
 import { addFeatureCollection } from '../utils/addFeatureCollection';
 import { styleset } from './DEFAULT_STYLES';
 
-console.log('dStyles: ', styleset);
-
 export function test_addFeatures(map) {
 	const FeatColl = {
 		type: 'FeatureCollection',
@@ -12,6 +10,7 @@ export function test_addFeatures(map) {
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [7.042569, 46.881066] },
 				properties: {
+					circleColor: 'yellow',
 					id: '49f56x10831cs7p',
 					name: 'Römisches Amphitheater Aventicum',
 					temperature: 100,
@@ -24,7 +23,7 @@ export function test_addFeatures(map) {
 				properties: {
 					id: 'feature-1',
 					name: 'Connecting Lines',
-					myLineWidth: 20,
+					myLineWidth: 1000,
 					style: {}
 				},
 				geometry: {
@@ -69,6 +68,34 @@ export function test_addFeatures(map) {
 						]
 					]
 				}
+			},
+			{
+				"type": "Feature",
+				"properties": {"id": "bar"},
+				"geometry": {
+					"coordinates": [
+						[
+							6.82124077973134,
+							47.00637166799734
+						],
+						[
+							7.0203991106476735,
+							46.89189219766652
+						]
+					],
+					"type": "LineString"
+				}
+			},
+			{
+				"type": "Feature",
+				"properties": {"id": "foo"},
+				"geometry": {
+					"coordinates": [
+						6.814925764335101,
+						46.88522781547138
+					],
+					"type": "Point"
+				}
 			}
 		]
 	};
@@ -77,16 +104,13 @@ export function test_addFeatures(map) {
 	let idCollector;
 	({ map: map, idCollector: idCollector } = addFeatureCollection(map, FeatColl, {
 		id: 'test',
-		// sortByTypesArray: ['lines', 'points', 'polygons'],
-		// allowDirectAccess: true,
-		manualStyleset: {
+		sortByTypesArray: ['lines',  'polygons', 'points'],
+		acceptTopLevelFeatureProps: false,
+		featStylesetKey: 'style',
+		presetStyleset: styleset,
+		collStyleset: {
 			force: {
 				points: {
-					type: 'circle',
-					circle: {
-						circleRadius: 25,
-						circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
-					}
 				},
 				lines: {
 					lineDashArray: [4, 4],
@@ -98,7 +122,7 @@ export function test_addFeatures(map) {
 					glow: {
 						lineWidthGlowFactor: 1.6,
 						lineColor: 'red',
-						lineCap: 'round',
+						// lineCap: 'round',
 						lineBlur: 5,
 						lineDashArray: [2, 2]
 					}
@@ -107,11 +131,17 @@ export function test_addFeatures(map) {
 					fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]]
 				}
 			},
-			points: {},
+			points: {
+				type: 'circle',
+				circle: {
+					circleRadius: 25,
+					circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
+				}
+			},
 			lines: {},
 			polygons: {}
-		}
-		// defaultStyleset: styleset
+		},
+		
 	}));
 
 	console.log(idCollector);

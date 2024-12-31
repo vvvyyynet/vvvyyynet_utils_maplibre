@@ -17,7 +17,7 @@ npm link vvvyyynet_utils_maplibre # in consumer repo
 ## Usage
 
 ```bash
-import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
+import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 ```
 
 ## Features
@@ -31,10 +31,9 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - **LineDashArray and Glow:** Since line-dasharray is in units of line-width it will affect the glow differently leading to two unsynced dashed lines. To compensate for this, all values of glow.lineDashArray property must be set inversely proportional.
 
 **LineGlow:** Available for lines and contourlines. In addition to the `line-blur` property, you can set a different color. Internally, a second layer is drawn with a pre-/postfixed layerId. The glow must be slightly wider than the line. You can either provide a `lineWidth` or a multiplication factor (`lineWidthGlowFactor`). Note that the latter not work, if the lineWidth defaults to the maplibregl-fallback linewidth (wich would be very tiny anyways), since the multiplication is handled inside the wrapper but not forwarded to maplibregl...
+- LineGlow also works with interpolate-expressions, as long as they are not nested (i.e. `lineWidth: ['interpolate', ['linear'],['zoom'], 0,10, 20, ['get','myValue']]` will be converted to `lineWidth: ['interpolate', ['linear'],['zoom'], 0,10, 20, NaN]`)
 
-### Shared features
 
-### Features for clone-dragging
 
 ## Todo
 ### General/NPM
@@ -53,8 +52,17 @@ import { makeDraggableWithClone } from 'vvvyyynet_utils_maplibre';
 - fix: copy lineCap of Glow from regular line
 
 ### Features
+- feat: add all properties to addLayer.js
 - feat: unset-all inside force
 - feat: unset specific inside force (e.g. fillPattern or iconImage)
+- feat: add a callbackFunction to addFeatureCollection()
 - feat: appart from 'circle'... are there any other maplibregl-default icons?
+- feat: improve `tweakGlowLineWidth()` such that it does not just check lineWidth[0]=='interpolate', but finds it nested inside, and then replaces from there. (there may be some other function around!). 
+  - for the case, that there is a ['get','myLineWidth'] expression nested inside, I guess, there is no chance to change this, without going to the id.properties.
+  - However, I have tested it, and the value will just be NaN, but the expression-array survives, which is not that bad news either. It just needs to be documented as a limitation.
+- feat: add types in accumulateKeyValuePairs(..., allowedTypes)
+- feat: add typescript
+- feat: add featStyleset support on the collection-level (may require renaming of collStyleset, which refers to the manual part, which for now is the only global one (appart from the presetStyleset) -- maybe into manipStyleset)
 
 ### Chore and Refactor
+- chore: externalise makeInteractive()

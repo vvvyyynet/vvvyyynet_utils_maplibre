@@ -9,19 +9,6 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	}, {});
 }
 
-function parseInterpolateArray(array) {
-	if (Array.isArray(array)) {
-		const interpolateString = [
-			'interpolate',
-			[...array[0]],
-			[array[1]],
-			...array.slice(2).join(',')
-		];
-		console.log(interpolateString);
-		return interpolateString;
-	}
-}
-
 export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root) {
 	// ---------------------------------------------------------------------------------------
 	// CONSOLE LOGS
@@ -114,7 +101,7 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 					['line-color', c(`${root}.lineColor`)],
 					['line-opacity', c(`${root}.lineOpacity`)],
 					['line-width', c(`${root}.lineWidth`)],
-					['line-blur', c(`${root}.lineBlur`)] //! DEBUG: not setting defaultStyleset may break
+					['line-blur', c(`${root}.lineBlur`)] //! DEBUG: not setting presetStyleset may break
 				]),
 				//! DEBUG undefined*Number = NaN... does this cause any problems?
 				filter: ['==', ['get', 'id'], filterId]

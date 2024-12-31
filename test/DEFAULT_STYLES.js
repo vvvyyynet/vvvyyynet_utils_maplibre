@@ -16,7 +16,7 @@ export const styleset = {
 			circleStrokeColor: 'black',
 			circleStrokeWidth: 1
 		},
-		// ICON
+		// SYMBOL
 		symbol: {
 			hasBackdropCircle: false,
 			// BACKDROP CIRCLE

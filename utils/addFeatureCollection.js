@@ -5,22 +5,31 @@ export function addFeatureCollection(
 	FeatColl,
 	{
 		idCollector = undefined,
-		sortByTypesArray = false, // falsy or array
+		sortByTypesArray = false,
 		id = undefined,
 		id_prefix = undefined,
-		manualStyleset = undefined,
-		defaultStyleset = undefined,
+		collStyleset = undefined,
+		presetStyleset = undefined,
+		featStylesetKey = 'style',
 		groups = undefined,
-		allowDirectAccess = undefined
+		acceptTopLevelFeatureProps = undefined
 	}
 ) {
 	// Function Arguments
 	// - map
-	// - FeatColl: featureCollection (in geojson format)
-	// - (id)
-	// - (id_prefix): id_prefix for the ids (e.g. "static", "database", ...)
-	// - (groups): used for toggling/filtering.
-	// - (style): used for styling, can be contained in the geojson > properties > style.
+	// - FeatColl: Object-Array (in geojson format) featureCollection
+	// - (idCollector): Object-Array (default: undefined)
+	// - (sortByTypesArray): falsy or Array of Strings (default: false) Must contain ['points', 'polygons', 'lines'] in the order of adding to map
+	// - (id): string (default: undefined) Will be part of the sourceId and layerId
+	// - (id_prefix): string (default: undefined) Prefix for the ids (e.g. "static", "database", ...)
+	// - (collStyleset): Object-Array (default: undefined)
+	// - (presetStyleset): Object-Array (default: undefined)
+	// - (featStylesetKey): String (default: undefined) 
+	// - (groups): Array of Strings (default: undefined) Used for toggling/filtering
+	// - (acceptTopLevelFeatureProps): boolean (default: undefined). If true, after searching for values in featStyleset it will also search in the first-level of feature.properties.
+	// 
+	// Returns
+	// - idCollector: Array
 
 	// Generate randomized fallback id
 	if (!id) {
@@ -30,7 +39,7 @@ export function addFeatureCollection(
 	// Generate sourceId
 	const sourceId = [id_prefix, id].filter(Boolean).join('-');
 	
-	// Add Source if not exist (//! BEWARE: expect HMR errors, if you force readding!)
+	// Add Source if not exist (//! BEWARE: expect HMR errors, if you force re-adding!)
 	if (!map.getSource(sourceId)) {
 		map.addSource(sourceId, {
 			type: 'geojson',
@@ -40,25 +49,44 @@ export function addFeatureCollection(
 
 	// Sort Feature Collection by type
 	if (sortByTypesArray) {
-		console.error('sortByTypesArray is not implemented yet.');
+		if (sortByTypesArray.length === 3 && 
+			sortByTypesArray.includes('points') && 
+			sortByTypesArray.includes('lines') && 
+			sortByTypesArray.includes('polygons')) {
+				const FeatCollCat = FeatColl.features.reduce((acc, feature) =>{
+					const  featureType = feature.geometry.type;
+					if (featureType === 'MultiPoint' || featureType === 'Point') {
+						acc.points.push(feature);
+					} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
+						acc.lines.push(feature);
+					} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
+						acc.polygons.push(feature);
+					}
+					return acc;
+				} , {points:[], lines:[], polygons:[]})
+				
+				FeatColl.features = [...FeatCollCat[sortByTypesArray[0]], ...FeatCollCat[sortByTypesArray[1]], ...FeatCollCat[sortByTypesArray[2]]];
+			} else {
+				console.warn(`Invalid 'sortByTypesArray' detected.\n\n Expected:\n- Falsy\n- An array of length 3 containing exactly the values ['points', 'lines', 'polygons'], in any order.\n\nFound: ${sortByTypesArray}`)
+			}
 	}
 
 	// Add Layers
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].filter(Boolean).join('-');
-		const featureStyleset = feature.properties.style;
+		const featStyleset = feature.properties?.[featStylesetKey];
 		({map:map, idCollector:idCollector} = addFeature(
 			map,
 			feature,
 			sourceId,
 			layerId,
-			featureStyleset,
-			manualStyleset,
+			featStyleset,
+			collStyleset,
 			groups,
 			{
 				idCollector: idCollector,
-				defaultStyleset: defaultStyleset,
-				allowDirectAccess: allowDirectAccess
+				presetStyleset: presetStyleset,
+				acceptTopLevelFeatureProps: acceptTopLevelFeatureProps
 			}
 		));
 	});
