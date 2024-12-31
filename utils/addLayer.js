@@ -70,12 +70,6 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 					['text-anchor', c('points.symbol.textAnchor')],
 					['text-font', c('points.symbol.textFont')]
 				]),
-				paint: accumulateKeyValuePairs([
-					['circle-radius', c(`${root}.circleRadius`)],
-					['circle-color', c(`${root}.circleColor`)],
-					['circle-stroke-color', c(`${root}.circleStrokeColor`)],
-					['circle-stroke-width', c(`${root}.circleStrokeWidth`)]
-				]),
 				filter: ['==', ['get', 'id'], filterId]
 			});
 			break;
@@ -101,9 +95,8 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 					['line-color', c(`${root}.lineColor`)],
 					['line-opacity', c(`${root}.lineOpacity`)],
 					['line-width', c(`${root}.lineWidth`)],
-					['line-blur', c(`${root}.lineBlur`)] //! DEBUG: not setting presetStyleset may break
+					['line-blur', c(`${root}.lineBlur`)]
 				]),
-				//! DEBUG undefined*Number = NaN... does this cause any problems?
 				filter: ['==', ['get', 'id'], filterId]
 			});
 			break;
@@ -123,7 +116,7 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				]),
 				paint: accumulateKeyValuePairs([
 					['fill-color', c(`${root}.fillColor`)],
-					['fill-pattern', c(`${root}.fillPattern`)], // Note, that setting 'fill-pattern':null will still remove fillColor!! (This is a //! BUG in maplibre)
+					['fill-pattern', c(`${root}.fillPattern`)],
 					['fill-opacity', c(`${root}.fillOpacity`)],
 					['fill-antialias', c(`${root}.fillAntialias`)]
 				]),

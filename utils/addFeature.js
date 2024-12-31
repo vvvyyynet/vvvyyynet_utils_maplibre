@@ -93,12 +93,12 @@ function coalesce(
 
 	// Fast version (will stop calculating as soon as truthy value is found)
 	return (
-		getNestedProperty(collStyleset, forcePath) ||
-		getNestedProperty(featStyleset, path) ||
+		getNestedProperty(collStyleset, forcePath) ??
+		getNestedProperty(featStyleset, path) ??
 		(acceptTopLevelFeatureProps
 			? getNestedProperty(featProps, path.split('.').pop())
-			: undefined) ||
-		getNestedProperty(collStyleset, path) ||
+			: undefined) ??
+		getNestedProperty(collStyleset, path) ??
 		getNestedProperty(presetStyleset, path)
 	);
 }
@@ -161,8 +161,9 @@ export function addFeature(
 	layerId,
 	{
 		groups = [],
-		featStyleset = {}, // styling as read from geoJSON
+		collCallbacks = {},
 		collStyleset = {}, // manual styling
+		featStyleset = {}, // styling as read from geoJSON
 		idCollector = {},
 		acceptTopLevelFeatureProps = false, //! TODO: implement
 		presetStyleset = {},
@@ -251,21 +252,24 @@ export function addFeature(
 			// Points - Points as Circles
 			// --------------------------------------
 			case 'circle':
-				map = addLayer(
-					map,
-					layerId_pointCircle,
-					sourceId,
-					groups,
-					filterId,
-					'circle',
-					c,
-					'points.circle'
-				);
-				// Push to idCollector
-				pushToPath(idCollector, 'all', layerId_pointCircle);
-				pushToPath(idCollector, 'types.points.all', layerId_pointCircle);
-				pushToPath(idCollector, 'types.points.circles', layerId_pointCircle);
-				pushToPath(idCollector, 'shapes.circles', layerId_pointCircle);
+				((layerId) => {
+					map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'points.circle');
+
+					// Execute Callbacks on relevant nodes
+					if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+					if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+					if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+					if (typeof collCallbacks?.points?.all == 'function')
+						collCallbacks.points.all(map, layerId);
+					if (typeof collCallbacks?.points?.circles == 'function')
+						collCallbacks.points.circles(map, layerId);
+
+					// Push to idCollector
+					pushToPath(idCollector, 'all', layerId);
+					pushToPath(idCollector, 'types.points.all', layerId);
+					pushToPath(idCollector, 'types.points.circles', layerId);
+					pushToPath(idCollector, 'shapes.circles', layerId);
+				})(layerId_pointCircle);
 				break;
 
 			case 'symbol':
@@ -273,41 +277,55 @@ export function addFeature(
 				// Points - Points as Symbols (Backdrops)
 				// --------------------------------------
 				if (c('points.symbol.hasBackdropCircle')) {
-					map = addLayer(
-						map,
-						layerId_pointBackdropCircle,
-						sourceId,
-						groups,
-						filterId,
-						'circle',
-						c,
-						'points.symbol.backdropCircle'
-					);
-					// Push to idCollector
-					pushToPath(idCollector, 'all', layerId_pointBackdropCircle);
-					pushToPath(idCollector, 'types.points.all', layerId_pointBackdropCircle);
-					pushToPath(idCollector, 'types.points.backdropCircles', layerId_pointBackdropCircle);
-					pushToPath(idCollector, 'shapes.special.backdropCircles', layerId_pointBackdropCircle);
+					((layerId) => {
+						map = addLayer(
+							map,
+							layerId,
+							sourceId,
+							groups,
+							filterId,
+							'circle',
+							c,
+							'points.symbol.backdropCircle'
+						);
+
+						// Execute Callbacks on relevant nodes
+						if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+						if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+						if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+						if (typeof collCallbacks?.points?.all == 'function')
+							collCallbacks.points.all(map, layerId);
+						if (typeof collCallbacks?.points?.backdropCircles == 'function')
+							collCallbacks.points.backdropCircles(map, layerId);
+
+						// Push to idCollector
+						pushToPath(idCollector, 'all', layerId);
+						pushToPath(idCollector, 'types.points.all', layerId);
+						pushToPath(idCollector, 'types.points.backdropCircles', layerId);
+						pushToPath(idCollector, 'shapes.special.backdropCircles', layerId);
+					})(layerId_pointBackdropCircle);
 				}
 
 				// --------------------------------------
 				// Points - Points as Symbols
 				// --------------------------------------
-				map = addLayer(
-					map,
-					layerId_pointSymbol,
-					sourceId,
-					groups,
-					filterId,
-					'symbol',
-					c,
-					'points.symbol'
-				);
-				// Push to idCollector
-				pushToPath(idCollector, 'all', layerId_pointSymbol);
-				pushToPath(idCollector, 'types.points.all', layerId_pointSymbol);
-				pushToPath(idCollector, 'types.points.symbols', layerId_pointSymbol);
-				pushToPath(idCollector, 'shapes.symbols', layerId_pointSymbol);
+				((layerId) => {
+					map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'points.symbol');
+					// Execute Callbacks on relevant nodes
+					if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+					if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+					if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+					if (typeof collCallbacks?.points?.all == 'function')
+						collCallbacks.points.all(map, layerId);
+					if (typeof collCallbacks?.points?.symbols == 'function')
+						collCallbacks.points.symbols(map, layerId);
+
+					// Push to idCollector
+					pushToPath(idCollector, 'all', layerId);
+					pushToPath(idCollector, 'types.points.all', layerId);
+					pushToPath(idCollector, 'types.points.symbols', layerId);
+					pushToPath(idCollector, 'shapes.symbols', layerId);
+				})(layerId_pointSymbol);
 
 				break;
 		}
@@ -325,47 +343,100 @@ export function addFeature(
 			featStyleset = tweakGlowStyle(featStyleset, 'lines');
 			presetStyleset = tweakGlowStyle(presetStyleset, 'lines');
 
-			map = addLayer(map, layerId_lineGlow, sourceId, groups, filterId, 'line', c, 'lines.glow');
+			((layerId) => {
+				map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'lines.glow');
 
-			// Push to idCollector
-			pushToPath(idCollector, 'all', layerId_lineGlow);
-			pushToPath(idCollector, 'types.lines.all', layerId_lineGlow);
-			pushToPath(idCollector, 'types.lines.lines.all', layerId_lineGlow);
-			pushToPath(idCollector, 'types.lines.lines.glows', layerId_lineGlow);
-			pushToPath(idCollector, 'shapes.special.lineGlows', layerId_lineGlow);
+				// Execute Callbacks on relevant nodes
+				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+				if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+				if (typeof collCallbacks?.lines == 'function') collCallbacks.lines(map, layerId);
+				if (typeof collCallbacks?.lines?.all == 'function') collCallbacks.lines.all(map, layerId);
+				if (typeof collCallbacks?.lines?.lines == 'function')
+					collCallbacks.lines.lines(map, layerId);
+				if (typeof collCallbacks?.lines?.lines?.all == 'function')
+					collCallbacks.lines.lines.all(map, layerId);
+				if (typeof collCallbacks?.lines?.lines?.lineGlows == 'function')
+					collCallbacks.lines.lines.lineGlows(map, layerId);
+
+				// Push to idCollector
+				pushToPath(idCollector, 'all', layerId);
+				pushToPath(idCollector, 'types.lines.all', layerId);
+				pushToPath(idCollector, 'types.lines.lines.all', layerId);
+				pushToPath(idCollector, 'types.lines.lines.glows', layerId);
+				pushToPath(idCollector, 'shapes.special.lineGlows', layerId);
+			})(layerId_lineGlow);
 		}
 
 		// --------------------------------------
 		// Lines - Regular Lines
 		// --------------------------------------
-		map = addLayer(map, layerId_line, sourceId, groups, filterId, 'line', c, 'lines');
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_line);
-		pushToPath(idCollector, 'types.lines.all', layerId_line);
-		pushToPath(idCollector, 'types.lines.lines.all', layerId_line);
-		pushToPath(idCollector, 'shapes.lines', layerId_line);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'lines');
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.lines == 'function') collCallbacks.lines(map, layerId);
+			if (typeof collCallbacks?.lines?.all == 'function') collCallbacks.lines.all(map, layerId);
+			if (typeof collCallbacks?.lines?.regLines == 'function')
+				collCallbacks.lines.regLines(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.lines.all', layerId);
+			pushToPath(idCollector, 'types.lines.lines.all', layerId);
+			pushToPath(idCollector, 'shapes.lines', layerId);
+		})(layerId_line);
 
 		// --------------------------------------
 		// Lines - Corners as Circles
 		// --------------------------------------
-		map = addLayer(map, layerId_lineCornerCircle, sourceId, groups, filterId, 'circle', c, 'lines');
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_lineCornerCircle);
-		pushToPath(idCollector, 'types.lines.all', layerId_lineCornerCircle);
-		pushToPath(idCollector, 'types.lines.corners.all', layerId_lineCornerCircle);
-		pushToPath(idCollector, 'types.lines.corners.circles', layerId_lineCornerCircle);
-		pushToPath(idCollector, 'shapes.circles', layerId_lineCornerCircle);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'lines');
+
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.lines == 'function') collCallbacks.lines(map, layerId);
+			if (typeof collCallbacks?.lines?.all == 'function') collCallbacks.lines.all(map, layerId);
+			if (typeof collCallbacks?.lines?.corners == 'function')
+				collCallbacks.lines.corners(map, layerId);
+			if (typeof collCallbacks?.lines?.corners?.all == 'function')
+				collCallbacks.lines.corners.all(map, layerId);
+			if (typeof collCallbacks?.lines?.corners?.circles == 'function')
+				collCallbacks.lines.corners.circles(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.lines.all', layerId);
+			pushToPath(idCollector, 'types.lines.corners.all', layerId);
+			pushToPath(idCollector, 'types.lines.corners.circles', layerId);
+			pushToPath(idCollector, 'shapes.circles', layerId);
+		})(layerId_lineCornerCircle);
 
 		// --------------------------------------
 		// Lines - Corners as Symbols
 		// --------------------------------------
-		map = addLayer(map, layerId_lineCornerSymbol, sourceId, groups, filterId, 'symbol', c, 'lines');
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_lineCornerSymbol);
-		pushToPath(idCollector, 'types.lines.all', layerId_lineCornerSymbol);
-		pushToPath(idCollector, 'types.lines.corners.all', layerId_lineCornerSymbol);
-		pushToPath(idCollector, 'types.lines.corners.symbols', layerId_lineCornerSymbol);
-		pushToPath(idCollector, 'shapes.symbols', layerId_lineCornerSymbol);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'lines');
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.lines == 'function') collCallbacks.lines(map, layerId);
+			if (typeof collCallbacks?.lines?.all == 'function') collCallbacks.lines.all(map, layerId);
+			if (typeof collCallbacks?.lines?.corners == 'function')
+				collCallbacks.lines.corners(map, layerId);
+			if (typeof collCallbacks?.lines?.corners?.all == 'function')
+				collCallbacks.lines.corners.all(map, layerId);
+			if (typeof collCallbacks?.lines?.corners?.symbols == 'function')
+				collCallbacks.lines.corners.symbols(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.lines.all', layerId);
+			pushToPath(idCollector, 'types.lines.corners.all', layerId);
+			pushToPath(idCollector, 'types.lines.corners.symbols', layerId);
+			pushToPath(idCollector, 'shapes.symbols', layerId);
+		})(layerId_lineCornerSymbol);
 
 		// =====================================================================================
 	} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
@@ -373,12 +444,23 @@ export function addFeature(
 		// --------------------------------------
 		// Polygons - Filling
 		// --------------------------------------
-		map = addLayer(map, layerId_polygonFill, sourceId, groups, filterId, 'fill', c, 'polygons');
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_polygonFill);
-		pushToPath(idCollector, 'types.polygons.all', layerId_polygonFill);
-		pushToPath(idCollector, 'types.polygons.fills', layerId_polygonFill);
-		pushToPath(idCollector, 'shapes.fills', layerId_polygonFill);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'fill', c, 'polygons');
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.polygons == 'function') collCallbacks.polygons(map, layerId);
+			if (typeof collCallbacks?.polygons?.all == 'function')
+				collCallbacks.polygons.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.fills == 'function')
+				collCallbacks.polygons.fills(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.polygons.all', layerId);
+			pushToPath(idCollector, 'types.polygons.fills', layerId);
+			pushToPath(idCollector, 'shapes.fills', layerId);
+		})(layerId_polygonFill);
 
 		// --------------------------------------
 		// Polygons - Contours Glow
@@ -390,76 +472,107 @@ export function addFeature(
 			featStyleset = tweakGlowStyle(featStyleset, 'polygons');
 			presetStyleset = tweakGlowStyle(presetStyleset, 'polygons');
 
-			map = addLayer(
-				map,
-				layerId_polygonContourGlow,
-				sourceId,
-				groups,
-				filterId,
-				'line',
-				c,
-				'polygons'
-			);
-			// Push to idCollector
+			((layerId) => {
+				map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'polygons');
+				// Execute Callbacks on relevant nodes
+				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+				if (typeof collCallbacks?.all == 'function') collCallbacks?.all(map, layerId);
+				if (typeof collCallbacks?.polygons == 'function') collCallbacks?.polygons(map, layerId);
+				if (typeof collCallbacks?.polygons?.all == 'function')
+					collCallbacks.polygons.all(map, layerId);
+				if (typeof collCallbacks?.polygons?.contours == 'function')
+					collCallbacks.polygons.contours(map, layerId);
+				if (typeof collCallbacks?.polygons?.contours?.all == 'function')
+					collCallbacks.polygons.contours.all(map, layerId);
+				if (typeof collCallbacks?.polygons?.contours?.lineGlows == 'function')
+					collCallbacks.polygons.contours.lineGlows(map, layerId);
 
-			// New way
-			pushToPath(idCollector, 'all', layerId_polygonContourGlow);
-			pushToPath(idCollector, 'types.polygons.all', layerId_polygonContourGlow); // change me
-			pushToPath(idCollector, 'types.polygons.contours.all', layerId_polygonContourGlow); // change me
-			pushToPath(idCollector, 'types.polygons.contours.glows', layerId_polygonContourGlow); // change me
-			pushToPath(idCollector, 'shapes.special.lineGlows', layerId_polygonContourGlow); // change me
+				// Push to idCollector
+				pushToPath(idCollector, 'all', layerId);
+				pushToPath(idCollector, 'types.polygons.all', layerId); // change me
+				pushToPath(idCollector, 'types.polygons.contours.all', layerId); // change me
+				pushToPath(idCollector, 'types.polygons.contours.glows', layerId); // change me
+				pushToPath(idCollector, 'shapes.special.lineGlows', layerId); // change me
+			})(layerId_polygonContourGlow);
 		}
 
 		// --------------------------------------
 		// Polygons - Contours Regular
 		// --------------------------------------
-		map = addLayer(map, layerId_polygonContour, sourceId, groups, filterId, 'line', c, 'polygons');
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_polygonContour);
-		pushToPath(idCollector, 'types.polygons.all', layerId_polygonContour);
-		pushToPath(idCollector, 'types.polygons.contours.all', layerId_polygonContour);
-		pushToPath(idCollector, 'shapes.lines', layerId_polygonContour);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'polygons');
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.polygons == 'function') collCallbacks.polygons(map, layerId);
+			if (typeof collCallbacks?.polygons?.all == 'function')
+				collCallbacks.polygons.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.contours == 'function')
+				collCallbacks.polygons.contours(map, layerId);
+			if (typeof collCallbacks?.polygons?.contours?.all == 'function')
+				collCallbacks.polygons.contours.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.contours?.regLines == 'function')
+				collCallbacks.polygons.contours.regLines(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.polygons.all', layerId);
+			pushToPath(idCollector, 'types.polygons.contours.all', layerId);
+			pushToPath(idCollector, 'shapes.polygons', layerId);
+		})(layerId_polygonContour);
 
 		// --------------------------------------
 		// Polygons - Corners as Circles
 		// --------------------------------------
-		map = addLayer(
-			map,
-			layerId_polygonCornerCircle,
-			sourceId,
-			groups,
-			filterId,
-			'circle',
-			c,
-			'polygons'
-		);
-		// Push to idCollector
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'polygons');
 
-		pushToPath(idCollector, 'all', layerId_polygonCornerCircle);
-		pushToPath(idCollector, 'types.polygons.all', layerId_polygonCornerCircle);
-		pushToPath(idCollector, 'types.polygons.corners.all', layerId_polygonCornerCircle);
-		pushToPath(idCollector, 'types.polygons.corners.circles', layerId_polygonCornerCircle);
-		pushToPath(idCollector, 'shapes.circles', layerId_polygonCornerCircle);
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.polygons == 'function') collCallbacks.polygons(map, layerId);
+			if (typeof collCallbacks?.polygons?.all == 'function')
+				collCallbacks.polygons.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners == 'function')
+				collCallbacks.polygons.corners(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners?.all == 'function')
+				collCallbacks.polygons.corners.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners?.circles == 'function')
+				collCallbacks.polygons.corners.circles(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.polygons.all', layerId);
+			pushToPath(idCollector, 'types.polygons.corners.all', layerId);
+			pushToPath(idCollector, 'types.polygons.corners.circles', layerId);
+			pushToPath(idCollector, 'shapes.circles', layerId);
+		})(layerId_polygonCornerCircle);
 
 		// --------------------------------------
 		// Polygons - Corners as Symbols
 		// --------------------------------------
-		map = addLayer(
-			map,
-			layerId_polygonCornerSymbol,
-			sourceId,
-			groups,
-			filterId,
-			'symbol',
-			c,
-			'polygons'
-		);
-		// Push to idCollector
-		pushToPath(idCollector, 'all', layerId_polygonCornerSymbol);
-		pushToPath(idCollector, 'types.polygons.all', layerId_polygonCornerSymbol);
-		pushToPath(idCollector, 'types.polygons.corners.all', layerId_polygonCornerSymbol);
-		pushToPath(idCollector, 'types.polygons.corners.symbols', layerId_polygonCornerSymbol);
-		pushToPath(idCollector, 'shapes.symbols', layerId_polygonCornerSymbol);
+		((layerId) => {
+			map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'polygons');
+			// Execute Callbacks on relevant nodes
+			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+			if (typeof collCallbacks?.polygons == 'function') collCallbacks.polygons(map, layerId);
+			if (typeof collCallbacks?.polygons?.all == 'function')
+				collCallbacks.polygons.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners == 'function')
+				collCallbacks.polygons.corners(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners?.all == 'function')
+				collCallbacks.polygons.corners.all(map, layerId);
+			if (typeof collCallbacks?.polygons?.corners?.symbols == 'function')
+				collCallbacks.polygons.corners.symbols(map, layerId);
+
+			// Push to idCollector
+			pushToPath(idCollector, 'all', layerId);
+			pushToPath(idCollector, 'types.polygons.all', layerId);
+			pushToPath(idCollector, 'types.polygons.corners.all', layerId);
+			pushToPath(idCollector, 'types.polygons.corners.symbols', layerId);
+			pushToPath(idCollector, 'shapes.symbols', layerId);
+		})(layerId_polygonCornerSymbol);
 
 		// =====================================================================================
 	} else if (feature.properties.shape === 'GeometryCollection') {

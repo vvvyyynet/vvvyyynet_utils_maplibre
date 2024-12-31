@@ -1,5 +1,6 @@
 import { addFeatureCollection } from '../utils/addFeatureCollection';
 import { styleset } from './DEFAULT_STYLES';
+import { makeLayerInteractive } from '../utils/makeLayerInteractive';
 
 export function test_addFeatures(map) {
 	const FeatColl = {
@@ -70,34 +71,75 @@ export function test_addFeatures(map) {
 				}
 			},
 			{
-				"type": "Feature",
-				"properties": {"id": "bar"},
-				"geometry": {
-					"coordinates": [
-						[
-							6.82124077973134,
-							47.00637166799734
-						],
-						[
-							7.0203991106476735,
-							46.89189219766652
-						]
+				type: 'Feature',
+				properties: { id: 'bar' },
+				geometry: {
+					coordinates: [
+						[6.82124077973134, 47.00637166799734],
+						[7.0203991106476735, 46.89189219766652]
 					],
-					"type": "LineString"
+					type: 'LineString'
 				}
 			},
 			{
-				"type": "Feature",
-				"properties": {"id": "foo"},
-				"geometry": {
-					"coordinates": [
-						6.814925764335101,
-						46.88522781547138
-					],
-					"type": "Point"
+				type: 'Feature',
+				properties: { id: 'foo' },
+				geometry: {
+					coordinates: [6.814925764335101, 46.88522781547138],
+					type: 'Point'
 				}
 			}
 		]
+	};
+
+	const collStyleset = {
+		force: {
+			points: {},
+			lines: {
+				lineDashArray: [4, 4],
+				lineCap: 'round',
+				lineJoin: 'round',
+				lineColor: 'black',
+				hasGlow: true,
+				lineWidth: ['interpolate', ['linear'], ['zoom'], 0, 20, 10, 5, 20, 900],
+				glow: {
+					lineWidthGlowFactor: 1.6,
+					lineColor: 'red',
+					// lineCap: 'round',
+					lineBlur: 5,
+					lineDashArray: [2, 2]
+				}
+			},
+			polygons: {
+				fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]],
+				fillOpacity: 0,
+			}
+		},
+		points: {
+			type: 'circle',
+			circle: {
+				circleRadius: 25,
+				circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
+			}
+		},
+		lines: {},
+		polygons: {}
+	};
+	const collCallbacks = {
+		all: {},
+		points: {
+			all: ((map, layerId) => {
+				console.log('FOUND IT: ', layerId);
+				makeLayerInteractive(map, layerId);
+			})
+		},
+		lines: {
+			corners: ((map, layerId) => {
+				console.log('FOUND IT: ', layerId);
+				makeLayerInteractive(map, layerId);
+			})
+		},
+		polygons: {}
 	};
 
 	// Add Features
@@ -105,44 +147,12 @@ export function test_addFeatures(map) {
 	({ map: map, idCollector: idCollector } = addFeatureCollection(map, FeatColl, {
 		id: 'test',
 		idCollector: {},
-		sortByTypesArray: ['lines',  'polygons', 'points'],
+		sortByTypesArray: ['points', 'lines', 'polygons'],
 		acceptTopLevelFeatureProps: false,
-		featStylesetKey: 'style',
+		collCallbacks: collCallbacks,
+		collStyleset: collStyleset,
 		presetStyleset: styleset,
-		collStyleset: {
-			force: {
-				points: {
-				},
-				lines: {
-					lineDashArray: [4, 4],
-					lineCap: 'round',
-					lineJoin: 'round',
-					lineColor: 'black',
-					hasGlow: true,
-					lineWidth: ['interpolate', ['linear'], ['zoom'], 0, 20, 10, 5, 20, 900],
-					glow: {
-						lineWidthGlowFactor: 1.6,
-						lineColor: 'red',
-						// lineCap: 'round',
-						lineBlur: 5,
-						lineDashArray: [2, 2]
-					}
-				},
-				polygons: {
-					fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]]
-				}
-			},
-			points: {
-				type: 'circle',
-				circle: {
-					circleRadius: 25,
-					circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
-				}
-			},
-			lines: {},
-			polygons: {}
-		},
-		
+		featStylesetKey: 'style'
 	}));
 
 	console.log(idCollector);

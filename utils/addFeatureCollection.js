@@ -8,6 +8,7 @@ export function addFeatureCollection(
 		sortByTypesArray = false,
 		id = undefined,
 		id_prefix = undefined,
+		collCallbacks = undefined,
 		collStyleset = undefined,
 		presetStyleset = undefined,
 		featStylesetKey = 'style',
@@ -84,10 +85,10 @@ export function addFeatureCollection(
 			];
 		} else {
 			console.warn(
-				`Invalid 'sortByTypesArray' detected.\n\n
-				Expected:\n
-				- Falsy\n
-				- An array of length 3 containing exactly the values ['points', 'lines', 'polygons'], in any order.\n\n
+				`Invalid 'sortByTypesArray' detected.\n
+				Expected:
+				- Falsy
+				- An array of length 3 containing exactly the values ['points', 'lines', 'polygons'], in any order.\n
 				Found: ${sortByTypesArray}`
 			);
 		}
@@ -104,15 +105,13 @@ export function addFeatureCollection(
 		({ map: map, idCollector: idCollector } = addFeature(map, feature, sourceId, layerId, {
 			groups,
 			idCollector: idCollector,
+			collCallbacks: collCallbacks,
 			collStyleset: collStyleset,
 			featStyleset: feature?.properties?.[featStylesetKey],
 			presetStyleset: presetStyleset,
 			acceptTopLevelFeatureProps: acceptTopLevelFeatureProps
 		}));
 
-		// -------------------------------------------
-		// Make layer interactive
-		// makeLayerInteractive(map, layerId);
 	});
 
 	return { map: map, idCollector: idCollector };
