@@ -16,8 +16,8 @@
 		"georeferncing",
 		"basemaps"
 	],
-	"author": "Levyn Bürki",
-	"license": "ISC",
+	"author": "Levyn Bürki (https://vvvyyy.net)",
+	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/vvvyyynet/vvvyyynet_utils_maplibre/issues"
 	},
