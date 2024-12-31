@@ -66,3 +66,62 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 
 ### Chore and Refactor
 - chore: externalise makeInteractive()
+
+
+
+
+
+## Style Guide
+
+### Structure of idCollector
+- The object-tree will be expanded as needed, so you can start with just {}.
+- Note, that if e.g. `idCollector = {shapes: "not an object"}` shapes will be overwritten.
+
+```js
+idCollector = {
+			all: [],
+			shapes: {
+				symbols: [],
+				circles: [],
+				lines: [],
+				fills: [],
+				special: {
+					backdropCircles: [],
+					lineGlows: []
+				}
+			},
+			types: {
+				points: {
+					all: [],
+					symbols: [],
+					circles: [],
+					backdropCircles: []
+				},
+				lines: {
+					all: [],
+					lines: {
+						all: [],
+						glows: []
+					},
+					corners: {
+						all: [],
+						symbols: [],
+						circles: []
+					}
+				},
+				polygons: {
+					all: [],
+					fills: [],
+					contours: {
+						all: [],
+						glows: []
+					},
+					corners: {
+						all: [],
+						symbols: [],
+						circles: []
+					}
+				}
+			}
+		}
+```

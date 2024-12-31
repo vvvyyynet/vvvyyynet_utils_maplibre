@@ -5,17 +5,6 @@ import { addLayer } from './addLayer';
 // Helper Functions
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function accumulateKeyValuePairs(keyvaluepairs) {
-	// Accumulate all key-value pairs with valid value
-	return keyvaluepairs.reduce((acc, [key, value]) => {
-		if (value) {
-			acc[key] = value;
-			//! TODO: feat: add type-checker!!
-		}
-		return acc;
-	}, {});
-}
-
 function constructId(base, layerId) {
 	return [base.prefix, layerId, base.postfix].filter(Boolean).join(base.sep);
 }
@@ -36,6 +25,33 @@ function setAtPath(object, path, value) {
 		acc[key] = idx === arr.length - 1 ? value : acc[key] || {};
 
 		return acc[key]; // Continue with the next level of the path
+	}, object);
+}
+
+export function pushToPath(object, path, value) {
+	return path.split('.').reduce((acc, key, idx, arr) => {
+		// Case 1: If it's the final key (end of the path)
+		if (idx === arr.length - 1) {
+			// If the current key's value is not an array, ensure it's an array and push the value
+			if (Array.isArray(acc[key])) {
+				// If it's already an array, push the value
+				acc[key].push(value);
+			} else if (!acc[key]) {
+				// If it's falsy
+				acc[key] = [value];
+			} else {
+				// If it's a primitive (string, number, etc.), do not modify it
+				console.warn(
+					`Expected an array at '${arr.join('.')}', found: ${acc[key]}. Continued without changes.`
+				);
+				return acc; // Early exit without making changes
+			}
+		} else if (idx < arr.length - 1) {
+			// Case 2: Ensure intermediate keys are objects and create them if necessary
+			acc[key] = acc[key] || {};
+		}
+
+		return acc[key]; // Continue navigating through the path
 	}, object);
 }
 
@@ -135,72 +151,6 @@ function tweakGlowStyle(styleset, type) {
 	return styleset;
 }
 
-function makeLayerInteractive(map, layerId) {
-	map.on('click', layerId, (e) => {
-		const feature = e.features[0];
-		// ------------------------------------------
-		// Console Info
-		// console.log(feature.geometry);
-
-		// ------------------------------------------
-		// Popup
-		if (
-			!!feature.properties.title ||
-			!!feature.properties.description ||
-			!!feature.properties.imageURL ||
-			!!feature.properties.imageURL2
-		) {
-			const popup = new maplibregl.Popup({
-				offset: 25,
-				className: 'custom-popup',
-				closeButton: false
-			})
-				.setLngLat(e.lngLat) // Set popup at the clicked location
-				.setHTML(
-					`
-				<div class="absolute top-0 left-0 w-full h-[30px] bg-gradient-to-b from-white to-transparent pointer-events-none">
-				</div>
-				<h3 class="text-base font-bold text-gray-600 mb-2">${feature.properties.title || ''}</h3>
-				<div class="pb-5 max-h-[50vh] w-full bg-white overflow-y-auto">
-					${
-						!!feature.properties.imageURL
-							? `<img class="my-5 max-h-[30vh] mx-auto self-center max-w-full rotate-[1deg]" src="${feature.properties.imageURL}" alt="image"/>`
-							: ''
-					}
-					<p class="text-xs">${feature.properties.description || ''}</p>
-					${
-						!!feature.properties.imageURL2
-							? `<img class="my-5 max-h-[30vh] mx-auto self-center max-w-full rotate-[-2deg]" src="${feature.properties.imageURL2}" alt="image"/>`
-							: ''
-					}
-					</div>
-					<div class="absolute bottom-0 left-0 w-full h-[50px] bg-gradient-to-b from-transparent to-white pointer-events-none">
-					</div>`
-				)
-				.addTo(map);
-		}
-
-		// ------------------------------------------
-		// Center map on feature's coordinates
-		var coords = e.features[0].geometry.coordinates;
-		// workaround for features that are not points //! BETTER: evaluate center of all points
-		while (coords[0].length > 1) {
-			coords = coords[0];
-		}
-		// map.flyTo({
-		// 	center: coords
-		// });
-	});
-
-	map.on('mouseenter', layerId, () => {
-		map.getCanvas().style.cursor = 'pointer';
-	});
-
-	map.on('mouseleave', layerId, () => {
-		map.getCanvas().style.cursor = '';
-	});
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////
 // Add Feature
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -209,56 +159,11 @@ export function addFeature(
 	feature,
 	sourceId,
 	layerId,
-	featStyleset = {}, // styling as read from geoJSON
-	collStyleset = {}, // manual styling
-	groups = [],
 	{
-		idCollector = {
-			all: [],
-			shapes: {
-				symbols: [],
-				circles: [],
-				lines: [],
-				fills: [],
-				special: {
-					backdropCircles: [],
-					lineGlows: []
-				}
-			},
-			types: {
-				points: {
-					all: [],
-					symbols: [],
-					circles: [],
-					backdropCircles: []
-				},
-				lines: {
-					all: [],
-					lines: {
-						all: [],
-						glows: []
-					},
-					corners: {
-						all: [],
-						symbols: [],
-						circles: []
-					}
-				},
-				polygons: {
-					all: [],
-					fills: [],
-					contours: {
-						all: [],
-						glows: []
-					},
-					corners: {
-						all: [],
-						symbols: [],
-						circles: []
-					}
-				}
-			}
-		},
+		groups = [],
+		featStyleset = {}, // styling as read from geoJSON
+		collStyleset = {}, // manual styling
+		idCollector = {},
 		acceptTopLevelFeatureProps = false, //! TODO: implement
 		presetStyleset = {},
 		idConstructors = {
@@ -357,10 +262,10 @@ export function addFeature(
 					'points.circle'
 				);
 				// Push to idCollector
-				idCollector.all.push(layerId_pointCircle);
-				idCollector.types.points.all.push(layerId_pointCircle);
-				idCollector.types.points.circles.push(layerId_pointCircle);
-				idCollector.shapes.circles.push(layerId_pointCircle);
+				pushToPath(idCollector, 'all', layerId_pointCircle);
+				pushToPath(idCollector, 'types.points.all', layerId_pointCircle);
+				pushToPath(idCollector, 'types.points.circles', layerId_pointCircle);
+				pushToPath(idCollector, 'shapes.circles', layerId_pointCircle);
 				break;
 
 			case 'symbol':
@@ -379,10 +284,10 @@ export function addFeature(
 						'points.symbol.backdropCircle'
 					);
 					// Push to idCollector
-					idCollector.all.push(layerId_pointBackdropCircle);
-					idCollector.types.points.all.push(layerId_pointBackdropCircle);
-					idCollector.types.points.backdropCircles.push(layerId_pointBackdropCircle);
-					idCollector.shapes.special.backdropCircles.push(layerId_pointBackdropCircle);
+					pushToPath(idCollector, 'all', layerId_pointBackdropCircle);
+					pushToPath(idCollector, 'types.points.all', layerId_pointBackdropCircle);
+					pushToPath(idCollector, 'types.points.backdropCircles', layerId_pointBackdropCircle);
+					pushToPath(idCollector, 'shapes.special.backdropCircles', layerId_pointBackdropCircle);
 				}
 
 				// --------------------------------------
@@ -399,10 +304,11 @@ export function addFeature(
 					'points.symbol'
 				);
 				// Push to idCollector
-				idCollector.all.push(layerId_pointSymbol);
-				idCollector.types.points.all.push(layerId_pointSymbol);
-				idCollector.types.points.symbols.push(layerId_pointSymbol);
-				idCollector.shapes.symbols.push(layerId_pointSymbol);
+				pushToPath(idCollector, 'all', layerId_pointSymbol);
+				pushToPath(idCollector, 'types.points.all', layerId_pointSymbol);
+				pushToPath(idCollector, 'types.points.symbols', layerId_pointSymbol);
+				pushToPath(idCollector, 'shapes.symbols', layerId_pointSymbol);
+
 				break;
 		}
 
@@ -422,11 +328,11 @@ export function addFeature(
 			map = addLayer(map, layerId_lineGlow, sourceId, groups, filterId, 'line', c, 'lines.glow');
 
 			// Push to idCollector
-			idCollector.all.push(layerId_lineGlow);
-			idCollector.types.lines.all.push(layerId_lineGlow);
-			idCollector.types.lines.lines.all.push(layerId_lineGlow);
-			idCollector.types.lines.lines.glows.push(layerId_lineGlow);
-			idCollector.shapes.special.lineGlows.push(layerId_lineGlow);
+			pushToPath(idCollector, 'all', layerId_lineGlow);
+			pushToPath(idCollector, 'types.lines.all', layerId_lineGlow);
+			pushToPath(idCollector, 'types.lines.lines.all', layerId_lineGlow);
+			pushToPath(idCollector, 'types.lines.lines.glows', layerId_lineGlow);
+			pushToPath(idCollector, 'shapes.special.lineGlows', layerId_lineGlow);
 		}
 
 		// --------------------------------------
@@ -434,32 +340,32 @@ export function addFeature(
 		// --------------------------------------
 		map = addLayer(map, layerId_line, sourceId, groups, filterId, 'line', c, 'lines');
 		// Push to idCollector
-		idCollector.all.push(layerId_line);
-		idCollector.types.lines.all.push(layerId_line);
-		idCollector.types.lines.lines.all.push(layerId_line);
-		idCollector.shapes.lines.push(layerId_line);
+		pushToPath(idCollector, 'all', layerId_line);
+		pushToPath(idCollector, 'types.lines.all', layerId_line);
+		pushToPath(idCollector, 'types.lines.lines.all', layerId_line);
+		pushToPath(idCollector, 'shapes.lines', layerId_line);
 
 		// --------------------------------------
 		// Lines - Corners as Circles
 		// --------------------------------------
 		map = addLayer(map, layerId_lineCornerCircle, sourceId, groups, filterId, 'circle', c, 'lines');
 		// Push to idCollector
-		idCollector.all.push(layerId_lineCornerCircle);
-		idCollector.types.lines.all.push(layerId_lineCornerCircle);
-		idCollector.types.lines.corners.all.push(layerId_lineCornerCircle);
-		idCollector.types.lines.corners.circles.push(layerId_lineCornerCircle);
-		idCollector.shapes.circles.push(layerId_lineCornerCircle);
+		pushToPath(idCollector, 'all', layerId_lineCornerCircle);
+		pushToPath(idCollector, 'types.lines.all', layerId_lineCornerCircle);
+		pushToPath(idCollector, 'types.lines.corners.all', layerId_lineCornerCircle);
+		pushToPath(idCollector, 'types.lines.corners.circles', layerId_lineCornerCircle);
+		pushToPath(idCollector, 'shapes.circles', layerId_lineCornerCircle);
 
 		// --------------------------------------
 		// Lines - Corners as Symbols
 		// --------------------------------------
 		map = addLayer(map, layerId_lineCornerSymbol, sourceId, groups, filterId, 'symbol', c, 'lines');
 		// Push to idCollector
-		idCollector.all.push(layerId_lineCornerSymbol);
-		idCollector.types.lines.all.push(layerId_lineCornerSymbol);
-		idCollector.types.lines.corners.all.push(layerId_lineCornerSymbol);
-		idCollector.types.lines.corners.symbols.push(layerId_lineCornerSymbol);
-		idCollector.shapes.symbols.push(layerId_lineCornerSymbol);
+		pushToPath(idCollector, 'all', layerId_lineCornerSymbol);
+		pushToPath(idCollector, 'types.lines.all', layerId_lineCornerSymbol);
+		pushToPath(idCollector, 'types.lines.corners.all', layerId_lineCornerSymbol);
+		pushToPath(idCollector, 'types.lines.corners.symbols', layerId_lineCornerSymbol);
+		pushToPath(idCollector, 'shapes.symbols', layerId_lineCornerSymbol);
 
 		// =====================================================================================
 	} else if (featureType === 'MultiPolygon' || featureType === 'Polygon') {
@@ -469,10 +375,10 @@ export function addFeature(
 		// --------------------------------------
 		map = addLayer(map, layerId_polygonFill, sourceId, groups, filterId, 'fill', c, 'polygons');
 		// Push to idCollector
-		idCollector.all.push(layerId_polygonFill);
-		idCollector.types.polygons.all.push(layerId_polygonFill);
-		idCollector.types.polygons.fills.push(layerId_polygonFill);
-		idCollector.shapes.fills.push(layerId_polygonFill);
+		pushToPath(idCollector, 'all', layerId_polygonFill);
+		pushToPath(idCollector, 'types.polygons.all', layerId_polygonFill);
+		pushToPath(idCollector, 'types.polygons.fills', layerId_polygonFill);
+		pushToPath(idCollector, 'shapes.fills', layerId_polygonFill);
 
 		// --------------------------------------
 		// Polygons - Contours Glow
@@ -495,11 +401,13 @@ export function addFeature(
 				'polygons'
 			);
 			// Push to idCollector
-			idCollector.all.push(layerId_polygonContourGlow);
-			idCollector.types.polygons.all.push(layerId_polygonContourGlow);
-			idCollector.types.polygons.contours.all.push(layerId_polygonContourGlow);
-			idCollector.types.polygons.contours.glows.push(layerId_polygonContourGlow);
-			idCollector.shapes.special.lineGlows.push(layerId_polygonContourGlow);
+
+			// New way
+			pushToPath(idCollector, 'all', layerId_polygonContourGlow);
+			pushToPath(idCollector, 'types.polygons.all', layerId_polygonContourGlow); // change me
+			pushToPath(idCollector, 'types.polygons.contours.all', layerId_polygonContourGlow); // change me
+			pushToPath(idCollector, 'types.polygons.contours.glows', layerId_polygonContourGlow); // change me
+			pushToPath(idCollector, 'shapes.special.lineGlows', layerId_polygonContourGlow); // change me
 		}
 
 		// --------------------------------------
@@ -507,10 +415,10 @@ export function addFeature(
 		// --------------------------------------
 		map = addLayer(map, layerId_polygonContour, sourceId, groups, filterId, 'line', c, 'polygons');
 		// Push to idCollector
-		idCollector.all.push(layerId_polygonContour);
-		idCollector.types.polygons.all.push(layerId_polygonContour);
-		idCollector.types.polygons.contours.all.push(layerId_polygonContour);
-		idCollector.shapes.lines.push(layerId_polygonContour);
+		pushToPath(idCollector, 'all', layerId_polygonContour);
+		pushToPath(idCollector, 'types.polygons.all', layerId_polygonContour);
+		pushToPath(idCollector, 'types.polygons.contours.all', layerId_polygonContour);
+		pushToPath(idCollector, 'shapes.lines', layerId_polygonContour);
 
 		// --------------------------------------
 		// Polygons - Corners as Circles
@@ -526,11 +434,12 @@ export function addFeature(
 			'polygons'
 		);
 		// Push to idCollector
-		idCollector.all.push(layerId_polygonCornerCircle);
-		idCollector.types.polygons.all.push(layerId_polygonCornerCircle);
-		idCollector.types.polygons.corners.all.push(layerId_polygonCornerCircle);
-		idCollector.types.polygons.corners.circles.push(layerId_polygonCornerCircle);
-		idCollector.shapes.circles.push(layerId_polygonCornerCircle);
+
+		pushToPath(idCollector, 'all', layerId_polygonCornerCircle);
+		pushToPath(idCollector, 'types.polygons.all', layerId_polygonCornerCircle);
+		pushToPath(idCollector, 'types.polygons.corners.all', layerId_polygonCornerCircle);
+		pushToPath(idCollector, 'types.polygons.corners.circles', layerId_polygonCornerCircle);
+		pushToPath(idCollector, 'shapes.circles', layerId_polygonCornerCircle);
 
 		// --------------------------------------
 		// Polygons - Corners as Symbols
@@ -546,11 +455,11 @@ export function addFeature(
 			'polygons'
 		);
 		// Push to idCollector
-		idCollector.all.push(layerId_polygonCornerSymbol);
-		idCollector.types.polygons.all.push(layerId_polygonCornerSymbol);
-		idCollector.types.polygons.corners.all.push(layerId_polygonCornerSymbol);
-		idCollector.types.polygons.corners.symbols.push(layerId_polygonCornerSymbol);
-		idCollector.shapes.symbols.push(layerId_polygonCornerSymbol);
+		pushToPath(idCollector, 'all', layerId_polygonCornerSymbol);
+		pushToPath(idCollector, 'types.polygons.all', layerId_polygonCornerSymbol);
+		pushToPath(idCollector, 'types.polygons.corners.all', layerId_polygonCornerSymbol);
+		pushToPath(idCollector, 'types.polygons.corners.symbols', layerId_polygonCornerSymbol);
+		pushToPath(idCollector, 'shapes.symbols', layerId_polygonCornerSymbol);
 
 		// =====================================================================================
 	} else if (feature.properties.shape === 'GeometryCollection') {
@@ -561,8 +470,5 @@ export function addFeature(
 		//! TODO: maybe, this should sort of recall the function?!
 	}
 
-	// -------------------------------------------
-	// Make layer interactive
-	makeLayerInteractive(map, layerId);
 	return { map: map, idCollector: idCollector };
 }

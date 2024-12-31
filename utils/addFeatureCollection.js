@@ -24,12 +24,16 @@ export function addFeatureCollection(
 	// - (id_prefix): string (default: undefined) Prefix for the ids (e.g. "static", "database", ...)
 	// - (collStyleset): Object-Array (default: undefined)
 	// - (presetStyleset): Object-Array (default: undefined)
-	// - (featStylesetKey): String (default: undefined) 
+	// - (featStylesetKey): String (default: undefined)
 	// - (groups): Array of Strings (default: undefined) Used for toggling/filtering
 	// - (acceptTopLevelFeatureProps): boolean (default: undefined). If true, after searching for values in featStyleset it will also search in the first-level of feature.properties.
-	// 
+	//
 	// Returns
 	// - idCollector: Array
+
+	// ==========================
+	// Preparation
+	// ==========================
 
 	// Generate randomized fallback id
 	if (!id) {
@@ -38,8 +42,11 @@ export function addFeatureCollection(
 
 	// Generate sourceId
 	const sourceId = [id_prefix, id].filter(Boolean).join('-');
-	
-	// Add Source if not exist (//! BEWARE: expect HMR errors, if you force re-adding!)
+
+	// ==========================
+	// Add Source
+	// ==========================
+	// ! BEWARE: Only add a source, if id does not exist. Expect HMR errors, if you force re-adding!
 	if (!map.getSource(sourceId)) {
 		map.addSource(sourceId, {
 			type: 'geojson',
@@ -49,12 +56,15 @@ export function addFeatureCollection(
 
 	// Sort Feature Collection by type
 	if (sortByTypesArray) {
-		if (sortByTypesArray.length === 3 && 
-			sortByTypesArray.includes('points') && 
-			sortByTypesArray.includes('lines') && 
-			sortByTypesArray.includes('polygons')) {
-				const FeatCollCat = FeatColl.features.reduce((acc, feature) =>{
-					const  featureType = feature.geometry.type;
+		if (
+			sortByTypesArray.length === 3 &&
+			sortByTypesArray.includes('points') &&
+			sortByTypesArray.includes('lines') &&
+			sortByTypesArray.includes('polygons')
+		) {
+			const FeatCollCat = FeatColl.features.reduce(
+				(acc, feature) => {
+					const featureType = feature.geometry.type;
 					if (featureType === 'MultiPoint' || featureType === 'Point') {
 						acc.points.push(feature);
 					} else if (featureType === 'MultiLineString' || featureType === 'LineString') {
@@ -63,33 +73,47 @@ export function addFeatureCollection(
 						acc.polygons.push(feature);
 					}
 					return acc;
-				} , {points:[], lines:[], polygons:[]})
-				
-				FeatColl.features = [...FeatCollCat[sortByTypesArray[0]], ...FeatCollCat[sortByTypesArray[1]], ...FeatCollCat[sortByTypesArray[2]]];
-			} else {
-				console.warn(`Invalid 'sortByTypesArray' detected.\n\n Expected:\n- Falsy\n- An array of length 3 containing exactly the values ['points', 'lines', 'polygons'], in any order.\n\nFound: ${sortByTypesArray}`)
-			}
+				},
+				{ points: [], lines: [], polygons: [] }
+			);
+
+			FeatColl.features = [
+				...FeatCollCat[sortByTypesArray[0]],
+				...FeatCollCat[sortByTypesArray[1]],
+				...FeatCollCat[sortByTypesArray[2]]
+			];
+		} else {
+			console.warn(
+				`Invalid 'sortByTypesArray' detected.\n\n
+				Expected:\n
+				- Falsy\n
+				- An array of length 3 containing exactly the values ['points', 'lines', 'polygons'], in any order.\n\n
+				Found: ${sortByTypesArray}`
+			);
+		}
 	}
 
+	// ==========================
 	// Add Layers
+	// ==========================
 	FeatColl.features.forEach((feature, index) => {
 		const layerId = [id_prefix, id, index + 1].filter(Boolean).join('-');
-		const featStyleset = feature.properties?.[featStylesetKey];
-		({map:map, idCollector:idCollector} = addFeature(
-			map,
-			feature,
-			sourceId,
-			layerId,
-			featStyleset,
-			collStyleset,
+
+		// -------------------------------------------
+		// Add layer to map
+		({ map: map, idCollector: idCollector } = addFeature(map, feature, sourceId, layerId, {
 			groups,
-			{
-				idCollector: idCollector,
-				presetStyleset: presetStyleset,
-				acceptTopLevelFeatureProps: acceptTopLevelFeatureProps
-			}
-		));
+			idCollector: idCollector,
+			collStyleset: collStyleset,
+			featStyleset: feature?.properties?.[featStylesetKey],
+			presetStyleset: presetStyleset,
+			acceptTopLevelFeatureProps: acceptTopLevelFeatureProps
+		}));
+
+		// -------------------------------------------
+		// Make layer interactive
+		// makeLayerInteractive(map, layerId);
 	});
 
-	return {map: map, idCollector:idCollector};
+	return { map: map, idCollector: idCollector };
 }

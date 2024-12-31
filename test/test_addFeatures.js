@@ -104,6 +104,7 @@ export function test_addFeatures(map) {
 	let idCollector;
 	({ map: map, idCollector: idCollector } = addFeatureCollection(map, FeatColl, {
 		id: 'test',
+		idCollector: {},
 		sortByTypesArray: ['lines',  'polygons', 'points'],
 		acceptTopLevelFeatureProps: false,
 		featStylesetKey: 'style',
