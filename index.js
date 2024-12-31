@@ -25,7 +25,7 @@ import { registerSVG } from './utils/registerSVG';
 import { addFeatureCollection } from './utils/addFeatureCollection'; //! NEW
 import { addFeature } from './utils/addFeature'; //!NEW (helper)
 import { addLayer } from './utils/addLayer'; //!NEW (helper)
-import { makeLayerInteractive } from './utils/makeLayerInteractive' //!NEW (helper)
+import { makeLayerInteractive } from './utils/makeLayerInteractive'; //!NEW (helper)
 
 //----------------------------------------------
 // Add Georeferenced Images to Map
@@ -51,6 +51,7 @@ import { toggleBackgrounds } from './utils/toggleBackgrounds';
 //----------------------------------------------
 // Tests
 import { test_addFeatures } from './test/test_addFeatures';
+import { test_getValidValue } from './test/test_getValidValue';
 
 //----------------------------------------------
 // Legacy (JW-Map)
@@ -65,6 +66,7 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 // Export
 export {
 	test_addFeatures,
+	test_getValidValue,
 	drawTestFeatures,
 	drawTestPoints,
 	drawTestLines,

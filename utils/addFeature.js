@@ -1,5 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import { addLayer } from './addLayer';
+import { getValidValue } from './validateProperties';
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Helper Functions
@@ -61,46 +62,71 @@ function getNestedProperty(base, path) {
 	}, base);
 }
 
+function justPassOnValue(type, camelCaseName, value) {
+	return value;
+}
+
 function coalesce(
 	featProps,
 	collStyleset,
 	featStyleset,
 	presetStyleset,
-	path,
-	acceptTopLevelFeatureProps
+	root,
+	camelCaseName,
+	type,
+	acceptTopLevelFeatureProps,
+	{ skipValidation = false }
 ) {
+	// console.log('SKIPVALIDATION (coalesce): ', skipValidation);
+	const path = `${root}.${camelCaseName}`;
 	const forcePath = `force.${path}`;
 
+	// Make it possible to skip validation
+	let validationFunction;
+	if (skipValidation) {
+		console.warn('Will skip validation during styleset-coalescing process');
+		validationFunction = justPassOnValue;
+	} else {
+		console.warn('Will validate');
+		validationFunction = getValidValue;
+	}
+
 	// Slow version with output (only for debugging)
-	// const val1 = getNestedProperty(collStyleset, forcePath);
-	// const val2 = getNestedProperty(featStyleset, path);
-	// const val3 = getNestedProperty(featProps, path.split('.').pop()); // last element
-	// const val4 = getNestedProperty(collStyleset, path);
-	// const val5 = getNestedProperty(presetStyleset, path);
-	// const returnvalue =
-	// 	val1 || val2 || (acceptTopLevelFeatureProps ? val3 : undefined) || val4 || val5;
-	// // if (path.split('.').pop() == 'lineDashArray') {
-	// if (true) {
-	// 	console.log('path', path);
-	// 	console.log('collStyleset forced: ', val1);
-	// 	console.log('featStyleset nested: ', val2);
-	// 	console.log('featProps direct: ', val3);
-	// 	console.log('collStyleset normal: ', val4);
-	// 	console.log('presetStyleset: ', val5);
-	// 	console.log(path, returnvalue);
-	// }
-	// return returnvalue;
+	const val1 = validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath));
+	const val2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
+	const val3 = validationFunction(
+		type,
+		camelCaseName,
+		getNestedProperty(featProps, path.split('.').pop())
+	); // last element
+	const val4 = validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path));
+	const val5 = validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path));
+	const returnvalue =
+		val1 ?? val2 ?? (acceptTopLevelFeatureProps ? val3 : undefined) ?? val4 ?? val5;
+	// if (path.split('.').pop() == 'fillOpacity') {
+	if (true) {
+		console.log('PATH: ', path);
+		console.log('RETURN VALUE: ', returnvalue);
+		console.log(`(1) collStyleset forced: ${val1} (${getNestedProperty(collStyleset, forcePath)})`);
+		console.log(`(2) featStyleset nested: ${val2} (${getNestedProperty(featStyleset, path)})`);
+		console.log(
+			`(3) featProps direct: ${val3} (${getNestedProperty(featStyleset, path.split('.').pop())})`
+		);
+		console.log(`(4) collStyleset normal: ${val4} (${getNestedProperty(collStyleset, path)})`);
+		console.log(`(5) presetStyleset: ${val5} (${getNestedProperty(presetStyleset, path)})`);
+	}
+	return returnvalue;
 
 	// Fast version (will stop calculating as soon as truthy value is found)
-	return (
-		getNestedProperty(collStyleset, forcePath) ??
-		getNestedProperty(featStyleset, path) ??
-		(acceptTopLevelFeatureProps
-			? getNestedProperty(featProps, path.split('.').pop())
-			: undefined) ??
-		getNestedProperty(collStyleset, path) ??
-		getNestedProperty(presetStyleset, path)
-	);
+	// return (
+	// 	validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath)) ??
+	// 	validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path)) ??
+	// 	(acceptTopLevelFeatureProps
+	// 		? validationFunction(type, camelCaseName, getNestedProperty(featProps, path.split('.').pop()))
+	// 		: undefined) ??
+	// 	validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path)) ??
+	// 	validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path))
+	// );
 }
 
 function tweakGlowStyle(styleset, type) {
@@ -180,7 +206,8 @@ export function addFeature(
 			polygonContourGlow: { prefix: 'polygonContourGlow', postfix: '', sep: '-' },
 			polygonCornerCircle: { prefix: 'polygonCornerCircle', postfix: '', sep: '-' },
 			polygonCornerSymbol: { prefix: 'polygonCornerSymbol', postfix: '', sep: '-' }
-		}
+		},
+		skipValidation = undefined
 	}
 ) {
 	// ---------------------------------------------------------------------------------------
@@ -230,14 +257,20 @@ export function addFeature(
 
 	// ---------------------------------------------------------------------------------------
 	// RE-DEFINE COALESCE FUNCTION
-	function c(path) {
+	// console.log('SKIPVALIDATION (addFeature): ', skipValidation);
+	// like so c(path) only requires path, whereas the other function arguments are taken from addFeature's arguments
+	function c(root, camelCaseName, type, { skipValidation = undefined }) {
+		// console.log('SKIPVALIDATION (c): ', skipValidation);
 		return coalesce(
 			feature?.properties,
 			collStyleset,
 			featStyleset,
 			presetStyleset,
-			path,
-			acceptTopLevelFeatureProps
+			root,
+			camelCaseName,
+			type,
+			acceptTopLevelFeatureProps,
+			{ skipValidation: skipValidation }
 		);
 	}
 
@@ -247,87 +280,80 @@ export function addFeature(
 	// =======================================================================================
 	if (featureType === 'MultiPoint' || featureType === 'Point') {
 		// =====================================================================================
-		switch (c('points.type')) {
-			// --------------------------------------
-			// Points - Points as Circles
-			// --------------------------------------
-			case 'circle':
-				((layerId) => {
-					map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'points.circle');
+		// --------------------------------------
+		// Points - Points as Circles
+		// --------------------------------------
+		if (c('points', 'addCircles', null, { skipValidation: true })) {
+			((layerId) => {
+				map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'points');
 
-					// Execute Callbacks on relevant nodes
-					if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
-					if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
-					if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
-					if (typeof collCallbacks?.points?.all == 'function')
-						collCallbacks.points.all(map, layerId);
-					if (typeof collCallbacks?.points?.circles == 'function')
-						collCallbacks.points.circles(map, layerId);
+				// Execute Callbacks on relevant nodes
+				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+				if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+				if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+				if (typeof collCallbacks?.points?.all == 'function') collCallbacks.points.all(map, layerId);
+				if (typeof collCallbacks?.points?.circles == 'function')
+					collCallbacks.points.circles(map, layerId);
 
-					// Push to idCollector
-					pushToPath(idCollector, 'all', layerId);
-					pushToPath(idCollector, 'types.points.all', layerId);
-					pushToPath(idCollector, 'types.points.circles', layerId);
-					pushToPath(idCollector, 'shapes.circles', layerId);
-				})(layerId_pointCircle);
-				break;
+				// Push to idCollector
+				pushToPath(idCollector, 'all', layerId);
+				pushToPath(idCollector, 'featTypes.points.all', layerId);
+				pushToPath(idCollector, 'featTypes.points.circles', layerId);
+				pushToPath(idCollector, 'layerTypes.circles', layerId);
+			})(layerId_pointCircle);
+		}
+		// --------------------------------------
+		// Points - Points as Symbols (Backdrops)
+		// --------------------------------------
+		if (c('points', 'addBackdropCircles', null, { skipValidation: true })) {
+			((layerId) => {
+				map = addLayer(
+					map,
+					layerId,
+					sourceId,
+					groups,
+					filterId,
+					'circle',
+					c,
+					'points.backdropCircle'
+				);
 
-			case 'symbol':
-				// --------------------------------------
-				// Points - Points as Symbols (Backdrops)
-				// --------------------------------------
-				if (c('points.symbol.hasBackdropCircle')) {
-					((layerId) => {
-						map = addLayer(
-							map,
-							layerId,
-							sourceId,
-							groups,
-							filterId,
-							'circle',
-							c,
-							'points.symbol.backdropCircle'
-						);
+				// Execute Callbacks on relevant nodes
+				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+				if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+				if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+				if (typeof collCallbacks?.points?.all == 'function') collCallbacks.points.all(map, layerId);
+				if (typeof collCallbacks?.points?.backdropCircles == 'function')
+					collCallbacks.points.backdropCircles(map, layerId);
 
-						// Execute Callbacks on relevant nodes
-						if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
-						if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
-						if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
-						if (typeof collCallbacks?.points?.all == 'function')
-							collCallbacks.points.all(map, layerId);
-						if (typeof collCallbacks?.points?.backdropCircles == 'function')
-							collCallbacks.points.backdropCircles(map, layerId);
+				// Push to idCollector
+				pushToPath(idCollector, 'all', layerId);
+				pushToPath(idCollector, 'featTypes.points.all', layerId);
+				pushToPath(idCollector, 'featTypes.points.backdropCircles', layerId);
+				pushToPath(idCollector, 'layerTypes.special.backdropCircles', layerId);
+			})(layerId_pointBackdropCircle);
+		}
 
-						// Push to idCollector
-						pushToPath(idCollector, 'all', layerId);
-						pushToPath(idCollector, 'types.points.all', layerId);
-						pushToPath(idCollector, 'types.points.backdropCircles', layerId);
-						pushToPath(idCollector, 'shapes.special.backdropCircles', layerId);
-					})(layerId_pointBackdropCircle);
-				}
+		// --------------------------------------
+		// Points - Points as Symbols
+		// --------------------------------------
+		if (c('points', 'addSymbols', null, { skipValidation: true })) {
+			((layerId) => {
+				map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'points');
+				// Execute Callbacks on relevant nodes
+				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
+				if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
+				if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
+				if (typeof collCallbacks?.points?.all == 'function') collCallbacks.points.all(map, layerId);
+				if (typeof collCallbacks?.points?.symbols == 'function')
+					collCallbacks.points.symbols(map, layerId);
 
-				// --------------------------------------
-				// Points - Points as Symbols
-				// --------------------------------------
-				((layerId) => {
-					map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'points.symbol');
-					// Execute Callbacks on relevant nodes
-					if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
-					if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
-					if (typeof collCallbacks?.points == 'function') collCallbacks.points(map, layerId);
-					if (typeof collCallbacks?.points?.all == 'function')
-						collCallbacks.points.all(map, layerId);
-					if (typeof collCallbacks?.points?.symbols == 'function')
-						collCallbacks.points.symbols(map, layerId);
-
-					// Push to idCollector
-					pushToPath(idCollector, 'all', layerId);
-					pushToPath(idCollector, 'types.points.all', layerId);
-					pushToPath(idCollector, 'types.points.symbols', layerId);
-					pushToPath(idCollector, 'shapes.symbols', layerId);
-				})(layerId_pointSymbol);
-
-				break;
+				// Push to idCollector
+				pushToPath(idCollector, 'all', layerId);
+				pushToPath(idCollector, 'featTypes.points.all', layerId);
+				pushToPath(idCollector, 'featTypes.points.symbols', layerId);
+				pushToPath(idCollector, 'layerTypes.symbols', layerId);
+			})(layerId_pointSymbol);
 		}
 
 		// =====================================================================================
@@ -336,7 +362,7 @@ export function addFeature(
 		// --------------------------------------
 		// Lines - Glow Lines
 		// --------------------------------------
-		if (c('lines.hasGlow')) {
+		if (c('lines', 'addGlow', null, { skipValidation: true })) {
 			// Tweak lineWidth for glow in all stylesets
 			collStyleset = tweakGlowStyle(collStyleset, 'lines');
 			collStyleset.force = tweakGlowStyle(collStyleset.force, 'lines');
@@ -360,10 +386,10 @@ export function addFeature(
 
 				// Push to idCollector
 				pushToPath(idCollector, 'all', layerId);
-				pushToPath(idCollector, 'types.lines.all', layerId);
-				pushToPath(idCollector, 'types.lines.lines.all', layerId);
-				pushToPath(idCollector, 'types.lines.lines.glows', layerId);
-				pushToPath(idCollector, 'shapes.special.lineGlows', layerId);
+				pushToPath(idCollector, 'featTypes.lines.all', layerId);
+				pushToPath(idCollector, 'featTypes.lines.lines.all', layerId);
+				pushToPath(idCollector, 'featTypes.lines.lines.glows', layerId);
+				pushToPath(idCollector, 'layerTypes.special.lineGlows', layerId);
 			})(layerId_lineGlow);
 		}
 
@@ -382,9 +408,9 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.lines.all', layerId);
-			pushToPath(idCollector, 'types.lines.lines.all', layerId);
-			pushToPath(idCollector, 'shapes.lines', layerId);
+			pushToPath(idCollector, 'featTypes.lines.all', layerId);
+			pushToPath(idCollector, 'featTypes.lines.lines.all', layerId);
+			pushToPath(idCollector, 'layerTypes.lines', layerId);
 		})(layerId_line);
 
 		// --------------------------------------
@@ -407,10 +433,10 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.lines.all', layerId);
-			pushToPath(idCollector, 'types.lines.corners.all', layerId);
-			pushToPath(idCollector, 'types.lines.corners.circles', layerId);
-			pushToPath(idCollector, 'shapes.circles', layerId);
+			pushToPath(idCollector, 'featTypes.lines.all', layerId);
+			pushToPath(idCollector, 'featTypes.lines.corners.all', layerId);
+			pushToPath(idCollector, 'featTypes.lines.corners.circles', layerId);
+			pushToPath(idCollector, 'layerTypes.circles', layerId);
 		})(layerId_lineCornerCircle);
 
 		// --------------------------------------
@@ -432,10 +458,10 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.lines.all', layerId);
-			pushToPath(idCollector, 'types.lines.corners.all', layerId);
-			pushToPath(idCollector, 'types.lines.corners.symbols', layerId);
-			pushToPath(idCollector, 'shapes.symbols', layerId);
+			pushToPath(idCollector, 'featTypes.lines.all', layerId);
+			pushToPath(idCollector, 'featTypes.lines.corners.all', layerId);
+			pushToPath(idCollector, 'featTypes.lines.corners.symbols', layerId);
+			pushToPath(idCollector, 'layerTypes.symbols', layerId);
 		})(layerId_lineCornerSymbol);
 
 		// =====================================================================================
@@ -457,15 +483,15 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.polygons.all', layerId);
-			pushToPath(idCollector, 'types.polygons.fills', layerId);
-			pushToPath(idCollector, 'shapes.fills', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.fills', layerId);
+			pushToPath(idCollector, 'layerTypes.fills', layerId);
 		})(layerId_polygonFill);
 
 		// --------------------------------------
 		// Polygons - Contours Glow
 		// --------------------------------------
-		if (c('polygons.hasGlow')) {
+		if (c('polygons', 'addGlow', null, { skipValidation: true })) {
 			// Tweak lineWidth for glow in all stylesets
 			collStyleset = tweakGlowStyle(collStyleset, 'polygons');
 			collStyleset.force = tweakGlowStyle(collStyleset.force, 'polygons');
@@ -489,10 +515,10 @@ export function addFeature(
 
 				// Push to idCollector
 				pushToPath(idCollector, 'all', layerId);
-				pushToPath(idCollector, 'types.polygons.all', layerId); // change me
-				pushToPath(idCollector, 'types.polygons.contours.all', layerId); // change me
-				pushToPath(idCollector, 'types.polygons.contours.glows', layerId); // change me
-				pushToPath(idCollector, 'shapes.special.lineGlows', layerId); // change me
+				pushToPath(idCollector, 'featTypes.polygons.all', layerId); // change me
+				pushToPath(idCollector, 'featTypes.polygons.contours.all', layerId); // change me
+				pushToPath(idCollector, 'featTypes.polygons.contours.glows', layerId); // change me
+				pushToPath(idCollector, 'layerTypes.special.lineGlows', layerId); // change me
 			})(layerId_polygonContourGlow);
 		}
 
@@ -516,9 +542,9 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.polygons.all', layerId);
-			pushToPath(idCollector, 'types.polygons.contours.all', layerId);
-			pushToPath(idCollector, 'shapes.polygons', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.contours.all', layerId);
+			pushToPath(idCollector, 'layerTypes.polygons', layerId);
 		})(layerId_polygonContour);
 
 		// --------------------------------------
@@ -542,10 +568,10 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.polygons.all', layerId);
-			pushToPath(idCollector, 'types.polygons.corners.all', layerId);
-			pushToPath(idCollector, 'types.polygons.corners.circles', layerId);
-			pushToPath(idCollector, 'shapes.circles', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.corners.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.corners.circles', layerId);
+			pushToPath(idCollector, 'layerTypes.circles', layerId);
 		})(layerId_polygonCornerCircle);
 
 		// --------------------------------------
@@ -568,10 +594,10 @@ export function addFeature(
 
 			// Push to idCollector
 			pushToPath(idCollector, 'all', layerId);
-			pushToPath(idCollector, 'types.polygons.all', layerId);
-			pushToPath(idCollector, 'types.polygons.corners.all', layerId);
-			pushToPath(idCollector, 'types.polygons.corners.symbols', layerId);
-			pushToPath(idCollector, 'shapes.symbols', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.corners.all', layerId);
+			pushToPath(idCollector, 'featTypes.polygons.corners.symbols', layerId);
+			pushToPath(idCollector, 'layerTypes.symbols', layerId);
 		})(layerId_polygonCornerSymbol);
 
 		// =====================================================================================

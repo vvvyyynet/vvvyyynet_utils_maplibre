@@ -13,7 +13,8 @@ export function addFeatureCollection(
 		presetStyleset = undefined,
 		featStylesetKey = 'style',
 		groups = undefined,
-		acceptTopLevelFeatureProps = undefined
+		acceptTopLevelFeatureProps = undefined,
+		skipValidation = undefined
 	}
 ) {
 	// Function Arguments
@@ -109,7 +110,8 @@ export function addFeatureCollection(
 			collStyleset: collStyleset,
 			featStyleset: feature?.properties?.[featStylesetKey],
 			presetStyleset: presetStyleset,
-			acceptTopLevelFeatureProps: acceptTopLevelFeatureProps
+			acceptTopLevelFeatureProps: acceptTopLevelFeatureProps,
+			skipValidation: skipValidation
 		}));
 
 	});

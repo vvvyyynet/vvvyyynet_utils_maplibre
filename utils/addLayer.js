@@ -1,5 +1,8 @@
+import { layerProperties as LP } from '../layerPropertiesKebabCamelType.ts';
+
 function accumulateKeyValuePairs(keyvaluepairs) {
 	// Accumulate all key-value pairs with valid value
+	console.log(keyvaluepairs);
 	return keyvaluepairs.reduce((acc, [key, value]) => {
 		if (value) {
 			acc[key] = value;
@@ -36,15 +39,18 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				metadata: {
 					groups: groups
 				},
-				layout: accumulateKeyValuePairs([
-					['visibility', c(`${root}.setInvisible`) ? 'none' : 'visible']
-				]),
-				paint: accumulateKeyValuePairs([
-					['circle-radius', c(`${root}.circleRadius`)],
-					['circle-color', c(`${root}.circleColor`)],
-					['circle-stroke-color', c(`${root}.circleStrokeColor`)],
-					['circle-stroke-width', c(`${root}.circleStrokeWidth`)]
-				]),
+				layout: accumulateKeyValuePairs(
+					LP.circle.layout.map((prop) => {
+						console.log(prop.name, prop.camelCaseName, c(root, prop.camelCaseName, 'circle', {}));
+						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
+					})
+				),
+				paint: accumulateKeyValuePairs(
+					LP.circle.paint.map((prop) => {
+						console.log(prop.name, prop.camelCaseName, c(root, prop.camelCaseName, 'circle', {}));
+						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
+					})
+				),
 				filter: ['==', ['get', 'id'], filterId]
 			});
 			break;
@@ -59,17 +65,16 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				metadata: {
 					groups: groups
 				},
-				layout: accumulateKeyValuePairs([
-					['visibility', c(`${root}.setInvisible`) ? 'none' : 'visible'],
-					['icon-image', c('points.symbol.iconImage')],
-					['icon-size', c('points.symbol.iconSize')],
-					['icon-anchor', c('points.symbol.iconAnchor')],
-					['icon-overlap', c('points.symbol.iconOverlap')],
-					['text-field', c('points.symbol.textField')],
-					['text-offset', c('points.symbol.textOffset')],
-					['text-anchor', c('points.symbol.textAnchor')],
-					['text-font', c('points.symbol.textFont')]
-				]),
+				layout: accumulateKeyValuePairs(
+					LP.symbol.layout.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'symbol', {})];
+					})
+				),
+				paint: accumulateKeyValuePairs(
+					LP.symbol.paint.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'symbol', {})];
+					})
+				),
 				filter: ['==', ['get', 'id'], filterId]
 			});
 			break;
@@ -85,18 +90,16 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 					groups: groups
 				},
 
-				layout: accumulateKeyValuePairs([
-					['visibility', c(`${root}.setInvisible`) ? 'none' : 'visible'],
-					['line-join', c(`${root}.lineJoin`)],
-					['line-cap', c(`${root}.lineCap`)]
-				]),
-				paint: accumulateKeyValuePairs([
-					['line-dasharray', c(`${root}lineDashArray`)],
-					['line-color', c(`${root}.lineColor`)],
-					['line-opacity', c(`${root}.lineOpacity`)],
-					['line-width', c(`${root}.lineWidth`)],
-					['line-blur', c(`${root}.lineBlur`)]
-				]),
+				layout: accumulateKeyValuePairs(
+					LP.line.layout.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'line', {})];
+					})
+				),
+				paint: accumulateKeyValuePairs(
+					LP.line.paint.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'line', {})];
+					})
+				),
 				filter: ['==', ['get', 'id'], filterId]
 			});
 			break;
@@ -111,16 +114,17 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				metadata: {
 					groups: groups
 				},
-				layout: accumulateKeyValuePairs([
-					['visibility', c(`${root}.setInvisible`) ? 'none' : 'visible']
-				]),
-				paint: accumulateKeyValuePairs([
-					['fill-color', c(`${root}.fillColor`)],
-					['fill-pattern', c(`${root}.fillPattern`)],
-					['fill-opacity', c(`${root}.fillOpacity`)],
-					['fill-antialias', c(`${root}.fillAntialias`)]
-				]),
-				...accumulateKeyValuePairs([['maxzoom', c(`${root}.maxZoom`)]]),
+				layout: accumulateKeyValuePairs(
+					LP.fill.layout.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
+					})
+				),
+				paint: accumulateKeyValuePairs(
+					LP.fill.paint.map((prop) => {
+						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
+					})
+				),
+				...accumulateKeyValuePairs([['maxzoom', c(root, 'maxZoom', 'fill', {})]]),
 
 				filter: ['==', ['get', 'id'], filterId]
 			});

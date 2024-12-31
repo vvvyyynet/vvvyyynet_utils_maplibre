@@ -92,15 +92,16 @@ export function test_addFeatures(map) {
 		]
 	};
 
+	// STYLESHEET
 	const collStyleset = {
 		force: {
-			points: {},
+			points: { addSymbols: true, addBackdropCircles: true, iconName:'dot' },
 			lines: {
 				lineDashArray: [4, 4],
 				lineCap: 'round',
 				lineJoin: 'round',
 				lineColor: 'black',
-				hasGlow: true,
+				addGlow: true,
 				lineWidth: ['interpolate', ['linear'], ['zoom'], 0, 20, 10, 5, 20, 900],
 				glow: {
 					lineWidthGlowFactor: 1.6,
@@ -112,32 +113,34 @@ export function test_addFeatures(map) {
 			},
 			polygons: {
 				fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]],
-				fillOpacity: 0,
+				fillOpacity: 0.1
 			}
 		},
 		points: {
+			// addCircles: true,
 			type: 'circle',
-			circle: {
-				circleRadius: 25,
-				circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
-			}
+			circleSortKey: 1,
+			circleRadius: 25,
+			circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
 		},
 		lines: {},
 		polygons: {}
 	};
+
+	// CALLBACKS
 	const collCallbacks = {
 		all: {},
 		points: {
-			all: ((map, layerId) => {
+			all: (map, layerId) => {
 				console.log('FOUND IT: ', layerId);
 				makeLayerInteractive(map, layerId);
-			})
+			}
 		},
 		lines: {
-			corners: ((map, layerId) => {
+			corners: (map, layerId) => {
 				console.log('FOUND IT: ', layerId);
 				makeLayerInteractive(map, layerId);
-			})
+			}
 		},
 		polygons: {}
 	};
@@ -152,7 +155,8 @@ export function test_addFeatures(map) {
 		collCallbacks: collCallbacks,
 		collStyleset: collStyleset,
 		presetStyleset: styleset,
-		featStylesetKey: 'style'
+		featStylesetKey: 'style',
+		skipValidation: false
 	}));
 
 	console.log(idCollector);
