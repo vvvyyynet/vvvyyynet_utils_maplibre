@@ -191,7 +191,7 @@ export function addFeature(
 		collStyleset = {}, // manual styling
 		featStyleset = {}, // styling as read from geoJSON
 		idCollector = {},
-		acceptTopLevelFeatureProps = false, //! TODO: implement
+		acceptTopLevelFeatureProps = false,
 		presetStyleset = {},
 		idConstructors = {
 			pointCircle: { prefix: 'pointCircle', postfix: '', sep: '-' },
@@ -606,7 +606,7 @@ export function addFeature(
 		// --------------------------------------
 		// Geometry Collection
 		// --------------------------------------
-		//! TODO: maybe, this should sort of recall the function?!
+		//! undecided yet, what to do with them.
 	}
 
 	return { map: map, idCollector: idCollector };

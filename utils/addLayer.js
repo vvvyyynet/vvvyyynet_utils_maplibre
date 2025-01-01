@@ -6,7 +6,6 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	return keyvaluepairs.reduce((acc, [key, value]) => {
 		if (value) {
 			acc[key] = value;
-			//! TODO: feat: add type-checker!!
 		}
 		return acc;
 	}, {});

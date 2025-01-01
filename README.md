@@ -38,69 +38,69 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 ## Todo
 ### General/NPM
 - feat: add automatic semanticVersioning
-- check the //! TODO flags
-- solve fill-pattern-problem (same goes for iconName, I guess...)
 
 ### Fixes
-- fix: linewidth must be set for glow, it won't work on the default.
-- test: array-syntax alone
-- fix: array-syntax won't work when mixed with e.g. lineWidth -> consider adding the manualStyles to the geoJSON file during `addFeatures` and then using maplibre's internal coalesce syntax. I guess, when applied on internal properties only, it should work fine.
-- fix: if a boolean is false it will be just fallbacked? What then? Pass as string? Why is setInvisible still working??
-- fix: move imports of CAPITALISED GLOBALS like FEATURES etc. to function arguments
-- fix: improve the checks and fallbacks inside addLayer for the various nested stylings
-- refactor: consider moving points_style inside style alltogether
-- fix: copy lineCap of Glow from regular line
-- fix: opacity=0 is still ignored... is there a deeper level nullish/falsy mistake beyond the fixed coalesce? (otherwise... check if no maplibregl-bug, but it can't)
-- fix: also validate the special add... properties
+- *fix: opacity=0 is still ignored... is there a deeper level nullish/falsy mistake beyond the fixed coalesce? (otherwise... check if no maplibregl-bug, but it can't)
+
+### Test
+- test: does acceptTopLevelFeatureProps=true work as intended?
 
 ### Features
-- feat: add all properties to addLayer.js
+- *feat: add typescript support
+- *feat: unset-all inside force
+- *feat: unset specific inside force (e.g. fillPattern or iconImage)
+- *feat: is collCallbacks the right name? should there be featCallbacks AND collCallbacks?
+- *feat (performance): add caching all coalesce-parts that are not the feature, since they remain the same.
+- *feat (performance): parse stylesheets and unify all variable names -> run cached coalesce -> use them directly in accumulate (no need to run this over everything!, however either filter out invalid keys, or use the list to filter the clean stylespec list)... well, unless featStyleset is not visible in the case of async adding... but will this ever be a thing? However... yeah, the logic will shift some levels up to addFeatureCollection. Ugly, but worth it for performance, I think. It's just a collecting-loop.
+- *feat: add backdropCircles to corners of polygons and lines!
+- *feat: inside coalesce(?) add a continueOnFail option (why would I not want to continue?)
+- *feat: addCircle, addFill, addLine, addSymbol // addGlowLine and addBackdropCircle
+	- also validate them (:Boolean (true|false)
+	- allowed types: `add... = 'visible'|'none'|{fill:string ('visible'|'none'), line:string ('visible'|'none'),...}) 
+	- should this be copied for visibility?: `visibility = 'visible'|'none'|{fill:string ('visible'|'none'), line:string ('visible'|'none'),...}) 
+	- coalescion of object-version should only happen on the outside, i.e. on the object as a whole
+
 - feat: consider adding coalesce also for filter?!
 - feat: consider merging metadata from different stylesets... but it's not style... just two sources then: feat + coll (and maybe db and manual, but I think this needs be handled externally.)
-- feat: unset-all inside force
-- feat: unset specific inside force (e.g. fillPattern or iconImage)
-- feat: add a callbackFunction to addFeatureCollection()
-- feat: appart from 'circle'... are there any other maplibregl-default icons?
 - feat: improve `tweakGlowLineWidth()` such that it does not just check lineWidth[0]=='interpolate', but finds it nested inside, and then replaces from there. (there may be some other function around!). 
   - for the case, that there is a ['get','myLineWidth'] expression nested inside, I guess, there is no chance to change this, without going to the id.properties.
   - However, I have tested it, and the value will just be NaN, but the expression-array survives, which is not that bad news either. It just needs to be documented as a limitation.
-- feat: add types in accumulateKeyValuePairs(..., allowedTypes)
-- feat: add typescript
 - feat: add featStyleset support on the collection-level (may require renaming of collStyleset, which refers to the manual part, which for now is the only global one (appart from the presetStyleset) -- maybe into manipStyleset)
-- feat: readd the extended visibility (maybe with a dict `visibility = 'visible'|'none'|{fill: ..., line: ..., ...}) -> HOW TO COALESCE THIS? only on the outside I'd say! Otherwise it's a bit random walk.
-- 
-- feat: add typing for addGlow, addBackdrop, addCircle, addSymbol (but in a seperate stylespec, which must be merged with the maplibre-stylespec! -> special values may be a reason NOT to migrat to internal validation later.)
-- feat: consider using internal validation (see caveat above on special values)
-
-- feat (performance): add caching all coalesce-parts that are not the feature, since they remain the same.
-- feat (performance): parse stylesheets and unify all variable names -> run cached coalesce -> use them directly in accumulate (no need to run this over everything!, however either filter out invalid keys, or use the list to filter the clean stylespec list)... well, unless featStyleset is not visible in the case of async adding... but will this ever be a thing? However... yeah, the logic will shift some levels up to addFeatureCollection. Ugly, but worth it for performance, I think. It's just a collecting-loop.
-- feat: add backdropCircles to corners of polygons and lines!
-- feat: inside coalesce(?) add a continueOnFail option (why would I not want to continue?)
-
+- feat: add typing for addGlow, addBackdrop, addCircle, addSymbol (but in a seperate stylespec. reference types from maplibre-stylespec instead of duplicating! 
+- feat: consider using maplibre's internal validation function (I think there is one)... although: special values may be a reason NOT to migrat to internal validation later.
+- feat: find solution for `GeometryCollection` maybe, this should sort of recall the function?!
 
 ### Chore and Refactor
+- *chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
+  - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly) 
+	- I guess it's best to just use 1-level-nesting instead of prefixing, since inside addLayer a circle and a backdropcircle are treated just the same! It's just the external bookkeeping that relies on separation, so nesting will do it.
+
 - chore: rename plural/singular mess
-- chore: add addGlow and addBackdrop
-- chore: externalise makeInteractive()
-- chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
-  - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly). 
 
 ### Document
 - docu: why `addCircle` =/= `visibility` (since you may want to toggle ON/OFF some layers later but still draw them with initial visibility false.)
 - docu: why use callbacks? (interactivity + diagnostics + )... for diagnostics... would the arguments need to be extended beyond layerId?
 - docu: show the beauty of why lineWidth and circleStrokeWidh are not the same. (or: fillColor and circleColor). This is amazing, since it allows flattening!!!
   - discuss this in the context of the specials, which introduce ambiguity, since suddenly there are two lines and two circles with potentially different styling, which you don't want to mix! (think of somebody who wants to toggle between points.circle and points.symbol (with points.backdropCircles) -- then ALL need to be added, even though they will never be visible at the same time... suddenly, the usecase is here, where we need separatio somehow... either by prefixing the names (which requires extending the stylespecs (don't like to think of aliases! ugly ugly)) or by nesting... which is ugly (eventhough I got quite good at doing this... )). Similarly a separation is needed for callbacks, and for the idCollector (here additional question concerning all/glow/reg??).
+- docu: linewidth must be set for glow, it won't work on the default.
+
+
+### Historical (I guess this is solved?)
+- fix: array-syntax won't work when mixed with e.g. lineWidth
+- refactor: consider adding the manualStyles to the geoJSON file during `addFeatures` and then using maplibre's internal coalesce syntax. I guess, when applied to internal properties only, it should work fine.
+- chore: move imports of CAPITALISED GLOBALS like FEATURES etc. to function arguments
+- fix: solve fill-pattern-problem (same goes for iconName, I guess...)
 
 
 ## Style Guide
 
-### Structure of idCollector
+### Structure of idCollector (OLD)
 - The object-tree will be expanded as needed, so you can start with just {}.
 - Note, that if e.g. `idCollector = {shapes: "not an object"}` shapes will be overwritten.
 
 ```js
 idCollector = {
-			all: [],
+	all: [],
 			shapes: {
 				symbols: [],
 				circles: [],
