@@ -134,9 +134,6 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				),
 				paint: accumulateKeyValuePairs(
 					LP.fill.paint.map((prop) => {
-						if (prop.camelCaseName == 'fillOpacity') {
-							console.log([prop.name, c(root, prop.camelCaseName, 'fill', {})]);
-						}
 						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
 					})
 				)

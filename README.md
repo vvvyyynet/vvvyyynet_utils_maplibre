@@ -38,8 +38,10 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 ## Todo
 ### General/NPM
 - feat: add automatic semanticVersioning
+- fix: all //! and //!TODO and //! TODO etc.
 
 ### Fixes
+- *fix: color-type in stylespec is sometimes a string, sometimes nothing, but it should be... well... what?
 - fix: throw warning/error on invalid/misspelled property-names and property-values before moving on to fallbacks during coalesce.
 	(the maplibre-error is e.g.: "Error: layers.myLayerId.paint.line-color: color expected, "blaack" found")
 - fix: if interactive-callback is set both on polygon-fill and polygon-contour, moving the cursor from the line further on the fill the cursor somehow switches back from pointer to normal... so I guess, interaction is not accessible (did not test with propper popups yet). However, this is a rare case, and if you move quickly over the contour inside the polygon, it will still work.
@@ -48,6 +50,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - test: does acceptTopLevelFeatureProps=true work as intended?
 
 ### Features
+- *feat: add heatmap,fill-extrusion,raster,hillshade,background to addLayer()
 - *feat: unset-all inside force
 - *feat: unset specific inside force (e.g. fillPattern or iconImage)
 - *feat: is collCallbacks the right name? should there be featCallbacks AND collCallbacks?
@@ -63,6 +66,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 	- coalescion of object-version should only happen on the outside, i.e. on the object as a whole
 - *feat: add typescript support
 
+- feat: allow also "feature-state" expression (relevant in the tweaking for lineGlow)
 - feat: consider adding coalesce also for filter?!
 - feat: consider merging metadata from different stylesets... but it's not style... just two sources then: feat + coll (and maybe db and manual, but I think this needs be handled externally.)
 - feat: improve `tweakGlowLineWidth()` such that it does not just check lineWidth[0]=='interpolate', but finds it nested inside, and then replaces from there. (there may be some other function around!). 
@@ -75,6 +79,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 
 ### Chore and Refactor
 - *chore: should I move away from camelCase completely? What does it serve, except larger bundle size for having two stylespec names now?
+	- if so, change logic inside `getValidValue()` and stylespec by nesting type and range directly inside kebabName.
 - *chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
   - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly) 
 	- I guess it's best to just use 1-level-nesting instead of prefixing, since inside addLayer a circle and a backdropcircle are treated just the same! It's just the external bookkeeping that relies on separation, so nesting will do it.
@@ -88,6 +93,11 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - docu: show the beauty of why lineWidth and circleStrokeWidh are not the same. (or: fillColor and circleColor). This is amazing, since it allows flattening!!!
   - discuss this in the context of the specials, which introduce ambiguity, since suddenly there are two lines and two circles with potentially different styling, which you don't want to mix! (think of somebody who wants to toggle between points.circle and points.symbol (with points.backdropCircles) -- then ALL need to be added, even though they will never be visible at the same time... suddenly, the usecase is here, where we need separatio somehow... either by prefixing the names (which requires extending the stylespecs (don't like to think of aliases! ugly ugly)) or by nesting... which is ugly (eventhough I got quite good at doing this... )). Similarly a separation is needed for callbacks, and for the idCollector (here additional question concerning all/glow/reg??).
 - docu: linewidth must be set for glow, it won't work on the default.
+- docu: stylespec covers FULL stylespec on https://maplibre.org/maplibre-style-spec/layers/ except source-layer (since it's not for GeoJSON).
+- docu: stylespec has some any types, that are technically badly typed (for metadata, filter, layout, paint)
+
+### Regarding Maplibre-Stylespec
+- type of icon-translate is number[] and must be of length===2, but the spec just sais "array"... why??
 
 
 ### Historical (I guess this is solved?)

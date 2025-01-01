@@ -95,7 +95,7 @@ export function test_addFeatures(map) {
 	// STYLESHEET
 	const collStyleset = {
 		force: {
-			points: { addSymbols: true, addBackdropCircles: true, iconName:'dot' },
+			points: { addSymbols: true, addBackdropCircles: true, iconName: 'dot' },
 			lines: {
 				lineDashArray: [4, 4],
 				lineCap: 'round',
@@ -118,7 +118,8 @@ export function test_addFeatures(map) {
 		},
 		points: {
 			// addCircles: true,
-			type: 'circle',
+			addCircles: true,
+			circleTranslateAnchor: "viewport", //!DEBUG validation here
 			circleSortKey: 1,
 			circleRadius: 25,
 			circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
@@ -129,25 +130,29 @@ export function test_addFeatures(map) {
 
 	// CALLBACKS
 	const collCallbacks = {
-		all: {},
-		points: {
-			all: (map, layerId) => {
-				console.log('CALLING BACK from layer: ', layerId);
-				makeLayerInteractive(map, layerId);
-			}
-		},
-		lines: {
-			corners: (map, layerId) => {
-				console.log('CALLING BACK from layer: ', layerId);
-				makeLayerInteractive(map, layerId);
-			}
-		},
-		polygons: {
-			all: (map, layerId) => {
-				console.log('CALLING BACK from layer: ', layerId);
-				makeLayerInteractive(map, layerId);
-			}
-		}
+		// all: 
+		// 	(map, layerId) => {
+		// 		console.log('CALLING BACK from layer: ', layerId);
+		// 		makeLayerInteractive(map, layerId);
+		// 	},
+		// points: {
+		// all: (map, layerId) => {
+		// 	console.log('CALLING BACK from layer: ', layerId);
+		// 	makeLayerInteractive(map, layerId);
+		// }
+		// },
+		// lines: {
+		// 	corners: (map, layerId) => {
+		// 		console.log('CALLING BACK from layer: ', layerId);
+		// 		makeLayerInteractive(map, layerId);
+		// 	}
+		// },
+		// polygons: {
+		// 	all: (map, layerId) => {
+		// 		console.log('CALLING BACK from layer: ', layerId);
+		// 		makeLayerInteractive(map, layerId);
+		// 	}
+		// }
 	};
 
 	// Add Features

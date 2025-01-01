@@ -92,39 +92,39 @@ function coalesce(
 	}
 
 	// Slow version with output (only for debugging)
-	// const val1 = getNestedProperty(collStyleset, forcePath);
-	// const val2 = getNestedProperty(featStyleset, path);
-	// const val3 = getNestedProperty(featProps, path.split('.').pop()); // last element
-	// const val4 = getNestedProperty(collStyleset, path);
-	// const val5 = getNestedProperty(presetStyleset, path);
+	const val1 = getNestedProperty(collStyleset, forcePath);
+	const val2 = getNestedProperty(featStyleset, path);
+	const val3 = getNestedProperty(featProps, path.split('.').pop()); // last element
+	const val4 = getNestedProperty(collStyleset, path);
+	const val5 = getNestedProperty(presetStyleset, path);
 
-	// // validation
-	// const validVal1 = validationFunction(type, camelCaseName, val1);
-	// const validVal2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
-	// const validVal3 = validationFunction(type, camelCaseName, val3); // last element
-	// const validVal4 = validationFunction(type, camelCaseName, val4);
-	// const validVal5 = validationFunction(type, camelCaseName, val5);
+	// validation
+	const validVal1 = validationFunction(type, camelCaseName, val1);
+	const validVal2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
+	const validVal3 = validationFunction(type, camelCaseName, val3); // last element
+	const validVal4 = validationFunction(type, camelCaseName, val4);
+	const validVal5 = validationFunction(type, camelCaseName, val5);
 
-	// // coalescing
-	// const returnvalue =
-	// 	validVal1 ??
-	// 	validVal2 ??
-	// 	(acceptTopLevelFeatureProps ? validVal3 : undefined) ??
-	// 	validVal4 ??
-	// 	validVal5;
+	// coalescing
+	const returnvalue =
+		validVal1 ??
+		validVal2 ??
+		(acceptTopLevelFeatureProps ? validVal3 : undefined) ??
+		validVal4 ??
+		validVal5;
 
-	// // Output
-	// if (path.split('.').pop() == 'fillOpacity') {
-	// 	// if (true) {
-	// 	console.log('PATH: ', path);
-	// 	console.log('RETURN VALUE: ', returnvalue);
-	// 	console.log(`(1) collStyleset forced: ${validVal1} (${val1})`);
-	// 	console.log(`(2) featStyleset nested: ${validVal2} (${val2})`);
-	// 	console.log(`(3) featProps direct: ${validVal3} (${val3})`);
-	// 	console.log(`(4) collStyleset normal: ${validVal4} (${val4})`);
-	// 	console.log(`(5) presetStyleset: ${validVal5} (${val5})`);
-	// }
-	// return returnvalue;
+	// Output
+	if (path.split('.').pop() == 'circleTranslateAnchor') {
+		// if (true) {
+		console.log('PATH: ', path);
+		console.log('RETURN VALUE: ', returnvalue);
+		console.log(`(1) collStyleset forced: ${validVal1} (${val1})`);
+		console.log(`(2) featStyleset nested: ${validVal2} (${val2})`);
+		console.log(`(3) featProps direct: ${validVal3} (${val3})`);
+		console.log(`(4) collStyleset normal: ${validVal4} (${val4})`);
+		console.log(`(5) presetStyleset: ${validVal5} (${val5})`);
+	}
+	return returnvalue;
 
 	// Fast version (will stop calculating as soon as non-nullish value is found)
 	return (
