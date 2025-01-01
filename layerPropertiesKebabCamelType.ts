@@ -1,4 +1,41 @@
-export const layerProperties = {
+type TlayerProperty = {
+	name: string,
+	camelCaseName: string,
+	type: string,
+	range?: {min?: number, max?: number}
+}
+
+type TlayerPropertyLayerProperties = {
+	id: TlayerProperty;
+	type: TlayerProperty;
+	metadata: TlayerProperty;
+	source: TlayerProperty;
+	minzoom: TlayerProperty;
+	maxzoom: TlayerProperty;
+	filter: TlayerProperty;
+	layout: TlayerProperty;
+	paint: TlayerProperty;
+}
+
+type TnormalLayer = {
+	layout: TlayerProperty[];
+	paint: TlayerProperty[];
+}
+
+type TLayerProperties = {
+  layerProperties: TlayerPropertyLayerProperties;
+	fill: TnormalLayer;
+	line: TnormalLayer;
+	symbol: TnormalLayer;
+	circle: TnormalLayer;
+	heatmap: TnormalLayer;
+	"fill-extrusion": TnormalLayer;
+	raster: TnormalLayer;
+	hillshade: TnormalLayer;
+	background: TnormalLayer;
+}
+
+export const layerProperties:TLayerProperties = {
 	layerProperties: {
 		id: {
 			name: 'id',
