@@ -54,8 +54,9 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - fix: also validate the special add... properties
 
 ### Features
-- feat: add maxzoom, minzoom and all other non paint/layout props
 - feat: add all properties to addLayer.js
+- feat: consider adding coalesce also for filter?!
+- feat: consider merging metadata from different stylesets... but it's not style... just two sources then: feat + coll (and maybe db and manual, but I think this needs be handled externally.)
 - feat: unset-all inside force
 - feat: unset specific inside force (e.g. fillPattern or iconImage)
 - feat: add a callbackFunction to addFeatureCollection()
