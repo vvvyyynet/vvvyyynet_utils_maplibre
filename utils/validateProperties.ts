@@ -12,6 +12,11 @@ export function getValidValue(layer: string, property: string, value: any): any 
   // console.log(validValue);
   // console.log(invalidValue);
 
+  // Skip validation for falsy values
+  if (value === null || value === undefined) {
+    return value;
+  }
+
   const layerSpec = styleSpec[layer];
   if (!layerSpec) {
     console.error(`Layer "${layer}" not found.`);
@@ -34,7 +39,7 @@ export function getValidValue(layer: string, property: string, value: any): any 
 
   // Validate type
   if (typeof value !== propertySpec.type && !Array.isArray(value) && typeof value !== "string") {
-    console.error(`Value for "${property}" must be of type "${propertySpec.type}".`);
+      console.error(`Value for "${property}" must be of type "${propertySpec.type}", found ${typeof value}`);
     return null;
   }
 

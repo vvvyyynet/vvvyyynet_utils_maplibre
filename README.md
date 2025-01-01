@@ -40,9 +40,9 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - feat: add automatic semanticVersioning
 
 ### Fixes
-- *fix: opacity=0 is still ignored... is there a deeper level nullish/falsy mistake beyond the fixed coalesce? (otherwise... check if no maplibregl-bug, but it can't)
 - fix: throw warning/error on invalid/misspelled property-names and property-values before moving on to fallbacks during coalesce.
 	(the maplibre-error is e.g.: "Error: layers.myLayerId.paint.line-color: color expected, "blaack" found")
+- fix: if interactive-callback is set both on polygon-fill and polygon-contour, moving the cursor from the line further on the fill the cursor somehow switches back from pointer to normal... so I guess, interaction is not accessible (did not test with propper popups yet). However, this is a rare case, and if you move quickly over the contour inside the polygon, it will still work.
 
 ### Test
 - test: does acceptTopLevelFeatureProps=true work as intended?
@@ -80,6 +80,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 	- I guess it's best to just use 1-level-nesting instead of prefixing, since inside addLayer a circle and a backdropcircle are treated just the same! It's just the external bookkeeping that relies on separation, so nesting will do it.
 
 - chore: rename plural/singular mess
+- chore: check all == and === as well as != and !== for correctness
 
 ### Document
 - docu: why `addCircle` =/= `visibility` (since you may want to toggle ON/OFF some layers later but still draw them with initial visibility false.)

@@ -84,49 +84,58 @@ function coalesce(
 	// Make it possible to skip validation
 	let validationFunction;
 	if (skipValidation) {
-		console.warn('Will skip validation during styleset-coalescing process');
+		console.warn('Will skip validation');
 		validationFunction = justPassOnValue;
 	} else {
-		console.warn('Will validate');
+		// console.warn('Will validate');
 		validationFunction = getValidValue;
 	}
 
 	// Slow version with output (only for debugging)
-	const val1 = validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath));
-	const val2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
-	const val3 = validationFunction(
-		type,
-		camelCaseName,
-		getNestedProperty(featProps, path.split('.').pop())
-	); // last element
-	const val4 = validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path));
-	const val5 = validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path));
-	const returnvalue =
-		val1 ?? val2 ?? (acceptTopLevelFeatureProps ? val3 : undefined) ?? val4 ?? val5;
-	// if (path.split('.').pop() == 'fillOpacity') {
-	if (true) {
-		console.log('PATH: ', path);
-		console.log('RETURN VALUE: ', returnvalue);
-		console.log(`(1) collStyleset forced: ${val1} (${getNestedProperty(collStyleset, forcePath)})`);
-		console.log(`(2) featStyleset nested: ${val2} (${getNestedProperty(featStyleset, path)})`);
-		console.log(
-			`(3) featProps direct: ${val3} (${getNestedProperty(featStyleset, path.split('.').pop())})`
-		);
-		console.log(`(4) collStyleset normal: ${val4} (${getNestedProperty(collStyleset, path)})`);
-		console.log(`(5) presetStyleset: ${val5} (${getNestedProperty(presetStyleset, path)})`);
-	}
-	return returnvalue;
+	// const val1 = getNestedProperty(collStyleset, forcePath);
+	// const val2 = getNestedProperty(featStyleset, path);
+	// const val3 = getNestedProperty(featProps, path.split('.').pop()); // last element
+	// const val4 = getNestedProperty(collStyleset, path);
+	// const val5 = getNestedProperty(presetStyleset, path);
 
-	// Fast version (will stop calculating as soon as truthy value is found)
-	// return (
-	// 	validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath)) ??
-	// 	validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path)) ??
-	// 	(acceptTopLevelFeatureProps
-	// 		? validationFunction(type, camelCaseName, getNestedProperty(featProps, path.split('.').pop()))
-	// 		: undefined) ??
-	// 	validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path)) ??
-	// 	validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path))
-	// );
+	// // validation
+	// const validVal1 = validationFunction(type, camelCaseName, val1);
+	// const validVal2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
+	// const validVal3 = validationFunction(type, camelCaseName, val3); // last element
+	// const validVal4 = validationFunction(type, camelCaseName, val4);
+	// const validVal5 = validationFunction(type, camelCaseName, val5);
+
+	// // coalescing
+	// const returnvalue =
+	// 	validVal1 ??
+	// 	validVal2 ??
+	// 	(acceptTopLevelFeatureProps ? validVal3 : undefined) ??
+	// 	validVal4 ??
+	// 	validVal5;
+
+	// // Output
+	// if (path.split('.').pop() == 'fillOpacity') {
+	// 	// if (true) {
+	// 	console.log('PATH: ', path);
+	// 	console.log('RETURN VALUE: ', returnvalue);
+	// 	console.log(`(1) collStyleset forced: ${validVal1} (${val1})`);
+	// 	console.log(`(2) featStyleset nested: ${validVal2} (${val2})`);
+	// 	console.log(`(3) featProps direct: ${validVal3} (${val3})`);
+	// 	console.log(`(4) collStyleset normal: ${validVal4} (${val4})`);
+	// 	console.log(`(5) presetStyleset: ${validVal5} (${val5})`);
+	// }
+	// return returnvalue;
+
+	// Fast version (will stop calculating as soon as non-nullish value is found)
+	return (
+		validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath)) ??
+		validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path)) ??
+		(acceptTopLevelFeatureProps
+			? validationFunction(type, camelCaseName, getNestedProperty(featProps, path.split('.').pop()))
+			: undefined) ??
+		validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path)) ??
+		validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path))
+	);
 }
 
 function tweakGlowStyle(styleset, type) {

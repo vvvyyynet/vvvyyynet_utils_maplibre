@@ -132,17 +132,22 @@ export function test_addFeatures(map) {
 		all: {},
 		points: {
 			all: (map, layerId) => {
-				console.log('FOUND IT: ', layerId);
+				console.log('CALLING BACK from layer: ', layerId);
 				makeLayerInteractive(map, layerId);
 			}
 		},
 		lines: {
 			corners: (map, layerId) => {
-				console.log('FOUND IT: ', layerId);
+				console.log('CALLING BACK from layer: ', layerId);
 				makeLayerInteractive(map, layerId);
 			}
 		},
-		polygons: {}
+		polygons: {
+			all: (map, layerId) => {
+				console.log('CALLING BACK from layer: ', layerId);
+				makeLayerInteractive(map, layerId);
+			}
+		}
 	};
 
 	// Add Features

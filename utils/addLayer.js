@@ -2,9 +2,9 @@ import { layerProperties as LP } from '../layerPropertiesKebabCamelType.ts';
 
 function accumulateKeyValuePairs(keyvaluepairs) {
 	// Accumulate all key-value pairs with valid value
-	console.log(keyvaluepairs);
 	return keyvaluepairs.reduce((acc, [key, value]) => {
-		if (value) {
+		if (value !== undefined && value !== null) {
+			// only add keys with non-nullish values to the list
 			acc[key] = value;
 		}
 		return acc;
@@ -45,13 +45,11 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				filter: ['==', ['get', 'id'], filterId],
 				layout: accumulateKeyValuePairs(
 					LP.circle.layout.map((prop) => {
-						console.log(prop.name, prop.camelCaseName, c(root, prop.camelCaseName, 'circle', {}));
 						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
 					})
 				),
 				paint: accumulateKeyValuePairs(
 					LP.circle.paint.map((prop) => {
-						console.log(prop.name, prop.camelCaseName, c(root, prop.camelCaseName, 'circle', {}));
 						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
 					})
 				)
@@ -136,6 +134,9 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				),
 				paint: accumulateKeyValuePairs(
 					LP.fill.paint.map((prop) => {
+						if (prop.camelCaseName == 'fillOpacity') {
+							console.log([prop.name, c(root, prop.camelCaseName, 'fill', {})]);
+						}
 						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
 					})
 				)
