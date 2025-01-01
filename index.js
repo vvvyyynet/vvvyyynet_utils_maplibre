@@ -5,10 +5,10 @@ import { getMapPosition } from './utils/getMapPosition';
 import { waitForStyleLoad } from './utils/waitForStyleLoad';
 
 //  Hardcoded testing features (will add Source and Layer *directly*!!)
-import { drawTestPoints } from './utils/drawTestPoints'; //! NEW
-import { drawTestLines } from './utils/drawTestLines'; //! NEW
-import { drawTestPolygons } from './utils/drawTestPolygons'; //! NEW
-import { drawTestFeatures } from './utils/drawTestFeatures'; //! NEW
+import { drawHardcodedPoints } from './utils/drawHardcodedPoints'; //! NEW
+import { drawHardcodedLines } from './utils/drawHardcodedLines'; //! NEW
+import { drawHardcodedPolygons } from './utils/drawHardcodedPolygons'; //! NEW
+import { drawHardcodedFeatures } from './utils/drawHardcodedFeatures'; //! NEW
 
 //-------------------------------------------------------------------
 // Basemap
@@ -68,10 +68,10 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 export {
 	test_addFeatures,
 	test_getValidValue,
-	drawTestFeatures,
-	drawTestPoints,
-	drawTestLines,
-	drawTestPolygons,
+	drawHardcodedFeatures,
+	drawHardcodedPoints,
+	drawHardcodedLines,
+	drawHardcodedPolygons,
 	addFeatureCollection,
 	addFeature,
 	addLayer,

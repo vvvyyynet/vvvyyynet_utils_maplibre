@@ -1,4 +1,4 @@
-export function drawTestLines(map) {
+export function drawHardcodedLines(map) {
 	console.log('DRAWING TEST LINES');
 
 	map.addSource('mylines', {

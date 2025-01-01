@@ -1,4 +1,4 @@
-export function drawTestPolygons(map) {
+export function drawHardcodedPolygons(map) {
 	console.log('DRAWING TEST POLYGONS');
 
 	// ------------------------------------------------

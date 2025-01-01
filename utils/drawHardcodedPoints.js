@@ -1,4 +1,4 @@
-export function drawTestPoints(map) {
+export function drawHardcodedPoints(map) {
 console.log('DRAWING TEST POINTS')
 map.addSource('mypoints', {
   type: 'geojson',
