@@ -1,17 +1,17 @@
 export function drawTestLines(map) {
-	
-  
-  // ------------------------------------------------
-  // Lines
-  // ------------------------------------------------
-  map.addSource('mylines', {
+	console.log('DRAWING TEST LINES');
+
+	map.addSource('mylines', {
 		type: 'geojson',
 		data: {
 			type: 'FeatureCollection',
 			features: [
 				{
 					type: 'Feature',
-					properties: { id: 'waejkl3782hjkwl', name: 'Connecting Lines', lineColor: 'green', lineWidth: 4 },
+					properties: {
+						id: 'line123',
+						name: 'Connecting Lines'
+					},
 					geometry: {
 						type: 'LineString',
 						coordinates: [
@@ -26,13 +26,13 @@ export function drawTestLines(map) {
 	});
 
 	map.addLayer({
-		id: 'myTestLines',
+		id: 'mylines_line',
 		type: 'line',
 		source: 'mylines',
-		// paint: {
-			// 'line-color': 'blue',
-			// 'line-width': 6,
-			// 'line-opacity': 1
-		// }
-	});	
+		paint: {
+			'line-color': 'blue',
+			'line-width': 6,
+			'line-opacity': 1
+		}
+	});
 }

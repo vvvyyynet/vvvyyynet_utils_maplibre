@@ -113,7 +113,7 @@ export function test_addFeatures(map) {
 			},
 			polygons: {
 				fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]],
-				fillOpacity: 0.1
+				fillOpacity: 0
 			}
 		},
 		points: {

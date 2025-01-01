@@ -7,6 +7,7 @@ import { waitForStyleLoad } from './utils/waitForStyleLoad';
 //  Hardcoded testing features (will add Source and Layer *directly*!!)
 import { drawTestPoints } from './utils/drawTestPoints'; //! NEW
 import { drawTestLines } from './utils/drawTestLines'; //! NEW
+import { drawTestPolygons } from './utils/drawTestPolygons'; //! NEW
 import { drawTestFeatures } from './utils/drawTestFeatures'; //! NEW
 
 //-------------------------------------------------------------------
@@ -70,6 +71,7 @@ export {
 	drawTestFeatures,
 	drawTestPoints,
 	drawTestLines,
+	drawTestPolygons,
 	addFeatureCollection,
 	addFeature,
 	addLayer,

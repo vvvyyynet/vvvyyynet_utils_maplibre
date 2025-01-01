@@ -41,16 +41,18 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 
 ### Fixes
 - *fix: opacity=0 is still ignored... is there a deeper level nullish/falsy mistake beyond the fixed coalesce? (otherwise... check if no maplibregl-bug, but it can't)
+- fix: throw warning/error on invalid/misspelled property-names and property-values before moving on to fallbacks during coalesce.
+	(the maplibre-error is e.g.: "Error: layers.myLayerId.paint.line-color: color expected, "blaack" found")
 
 ### Test
 - test: does acceptTopLevelFeatureProps=true work as intended?
 
 ### Features
-- *feat: add typescript support
 - *feat: unset-all inside force
 - *feat: unset specific inside force (e.g. fillPattern or iconImage)
 - *feat: is collCallbacks the right name? should there be featCallbacks AND collCallbacks?
 - *feat (performance): add caching all coalesce-parts that are not the feature, since they remain the same.
+	- also add type-checking of property-names, not only values.
 - *feat (performance): parse stylesheets and unify all variable names -> run cached coalesce -> use them directly in accumulate (no need to run this over everything!, however either filter out invalid keys, or use the list to filter the clean stylespec list)... well, unless featStyleset is not visible in the case of async adding... but will this ever be a thing? However... yeah, the logic will shift some levels up to addFeatureCollection. Ugly, but worth it for performance, I think. It's just a collecting-loop.
 - *feat: add backdropCircles to corners of polygons and lines!
 - *feat: inside coalesce(?) add a continueOnFail option (why would I not want to continue?)
@@ -59,6 +61,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 	- allowed types: `add... = 'visible'|'none'|{fill:string ('visible'|'none'), line:string ('visible'|'none'),...}) 
 	- should this be copied for visibility?: `visibility = 'visible'|'none'|{fill:string ('visible'|'none'), line:string ('visible'|'none'),...}) 
 	- coalescion of object-version should only happen on the outside, i.e. on the object as a whole
+- *feat: add typescript support
 
 - feat: consider adding coalesce also for filter?!
 - feat: consider merging metadata from different stylesets... but it's not style... just two sources then: feat + coll (and maybe db and manual, but I think this needs be handled externally.)
@@ -71,6 +74,7 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - feat: find solution for `GeometryCollection` maybe, this should sort of recall the function?!
 
 ### Chore and Refactor
+- *chore: should I move away from camelCase completely? What does it serve, except larger bundle size for having two stylespec names now?
 - *chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
   - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly) 
 	- I guess it's best to just use 1-level-nesting instead of prefixing, since inside addLayer a circle and a backdropcircle are treated just the same! It's just the external bookkeeping that relies on separation, so nesting will do it.

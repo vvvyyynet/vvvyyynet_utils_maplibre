@@ -1,5 +1,5 @@
 export function drawTestPoints(map) {
-  console.log('DRAWING TEST DOTS')
+console.log('DRAWING TEST POINTS')
 map.addSource('mypoints', {
   type: 'geojson',
   data: {
@@ -8,30 +8,29 @@ map.addSource('mypoints', {
       {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [7.042569, 46.881066] },
-        properties: { id: '49f56x10831cs7p', name: 'Römisches Amphitheater Aventicum' }
+        properties: { id: 'point123_a', name: 'Römisches Amphitheater Aventicum' }
       },
       {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [8.7933439, 46.1678596] },
-        properties: { id: 'qmq36u8z9b2x5nc', name: 'Castello Visconteo' }
+        properties: { id: 'point123_b', name: 'Castello Visconteo' }
       },
       {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [6.9762993, 46.3150334] },
-        properties: { id: 'c6079rsfypjj863', name: "Château d'Aigle" }
+        properties: { id: 'point123_c', name: "Château d'Aigle" }
       }
     ]
   }
 });
 
-// Add a simple circle layer to display the points
 map.addLayer({
-  id: 'myTestPoints',
+  id: 'mypoints_circle',
   type: 'circle',
   source: 'mypoints',
   paint: {
-    'circle-radius': 12, // Size of the circle
-    'circle-color': '#FF0000' // Color of the circle
+    'circle-radius': 12,
+    'circle-color': '#FF0000'
   }
 });
 }
