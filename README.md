@@ -50,8 +50,11 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - fix: improve the checks and fallbacks inside addLayer for the various nested stylings
 - refactor: consider moving points_style inside style alltogether
 - fix: copy lineCap of Glow from regular line
+- fix: opacity=0 is still ignored... is there a deeper level nullish/falsy mistake beyond the fixed coalesce? (otherwise... check if no maplibregl-bug, but it can't)
+- fix: also validate the special add... properties
 
 ### Features
+- feat: add maxzoom, minzoom and all other non paint/layout props
 - feat: add all properties to addLayer.js
 - feat: unset-all inside force
 - feat: unset specific inside force (e.g. fillPattern or iconImage)
@@ -63,12 +66,29 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - feat: add types in accumulateKeyValuePairs(..., allowedTypes)
 - feat: add typescript
 - feat: add featStyleset support on the collection-level (may require renaming of collStyleset, which refers to the manual part, which for now is the only global one (appart from the presetStyleset) -- maybe into manipStyleset)
+- feat: readd the extended visibility (maybe with a dict `visibility = 'visible'|'none'|{fill: ..., line: ..., ...}) -> HOW TO COALESCE THIS? only on the outside I'd say! Otherwise it's a bit random walk.
+- 
+- feat: add typing for addGlow, addBackdrop, addCircle, addSymbol (but in a seperate stylespec, which must be merged with the maplibre-stylespec! -> special values may be a reason NOT to migrat to internal validation later.)
+- feat: consider using internal validation (see caveat above on special values)
+
+- feat (performance): add caching all coalesce-parts that are not the feature, since they remain the same.
+- feat (performance): parse stylesheets and unify all variable names -> run cached coalesce -> use them directly in accumulate (no need to run this over everything!, however either filter out invalid keys, or use the list to filter the clean stylespec list)... well, unless featStyleset is not visible in the case of async adding... but will this ever be a thing? However... yeah, the logic will shift some levels up to addFeatureCollection. Ugly, but worth it for performance, I think. It's just a collecting-loop.
+- feat: add backdropCircles to corners of polygons and lines!
+- feat: inside coalesce(?) add a continueOnFail option (why would I not want to continue?)
+
 
 ### Chore and Refactor
+- chore: rename plural/singular mess
+- chore: add addGlow and addBackdrop
 - chore: externalise makeInteractive()
+- chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
+  - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly). 
 
-
-
+### Document
+- docu: why `addCircle` =/= `visibility` (since you may want to toggle ON/OFF some layers later but still draw them with initial visibility false.)
+- docu: why use callbacks? (interactivity + diagnostics + )... for diagnostics... would the arguments need to be extended beyond layerId?
+- docu: show the beauty of why lineWidth and circleStrokeWidh are not the same. (or: fillColor and circleColor). This is amazing, since it allows flattening!!!
+  - discuss this in the context of the specials, which introduce ambiguity, since suddenly there are two lines and two circles with potentially different styling, which you don't want to mix! (think of somebody who wants to toggle between points.circle and points.symbol (with points.backdropCircles) -- then ALL need to be added, even though they will never be visible at the same time... suddenly, the usecase is here, where we need separatio somehow... either by prefixing the names (which requires extending the stylespecs (don't like to think of aliases! ugly ugly)) or by nesting... which is ugly (eventhough I got quite good at doing this... )). Similarly a separation is needed for callbacks, and for the idCollector (here additional question concerning all/glow/reg??).
 
 
 ## Style Guide
