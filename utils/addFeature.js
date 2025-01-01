@@ -186,7 +186,7 @@ export function addFeature(
 	sourceId,
 	layerId,
 	{
-		groups = [],
+		groupNames = [],
 		collCallbacks = {},
 		collStyleset = {}, // manual styling
 		featStyleset = {}, // styling as read from geoJSON
@@ -285,7 +285,7 @@ export function addFeature(
 		// --------------------------------------
 		if (c('points', 'addCircles', null, { skipValidation: true })) {
 			((layerId) => {
-				map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'points');
+				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'circle', c, 'points');
 
 				// Execute Callbacks on relevant nodes
 				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
@@ -311,7 +311,7 @@ export function addFeature(
 					map,
 					layerId,
 					sourceId,
-					groups,
+					groupNames,
 					filterId,
 					'circle',
 					c,
@@ -339,7 +339,7 @@ export function addFeature(
 		// --------------------------------------
 		if (c('points', 'addSymbols', null, { skipValidation: true })) {
 			((layerId) => {
-				map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'points');
+				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'symbol', c, 'points');
 				// Execute Callbacks on relevant nodes
 				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 				if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
@@ -370,7 +370,7 @@ export function addFeature(
 			presetStyleset = tweakGlowStyle(presetStyleset, 'lines');
 
 			((layerId) => {
-				map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'lines.glow');
+				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'line', c, 'lines.glow');
 
 				// Execute Callbacks on relevant nodes
 				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
@@ -397,7 +397,7 @@ export function addFeature(
 		// Lines - Regular Lines
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'lines');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'line', c, 'lines');
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
@@ -417,7 +417,7 @@ export function addFeature(
 		// Lines - Corners as Circles
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'lines');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'circle', c, 'lines');
 
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
@@ -443,7 +443,7 @@ export function addFeature(
 		// Lines - Corners as Symbols
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'lines');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'symbol', c, 'lines');
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
@@ -471,7 +471,7 @@ export function addFeature(
 		// Polygons - Filling
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'fill', c, 'polygons');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'fill', c, 'polygons');
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
@@ -499,7 +499,7 @@ export function addFeature(
 			presetStyleset = tweakGlowStyle(presetStyleset, 'polygons');
 
 			((layerId) => {
-				map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'polygons');
+				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'line', c, 'polygons');
 				// Execute Callbacks on relevant nodes
 				if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 				if (typeof collCallbacks?.all == 'function') collCallbacks?.all(map, layerId);
@@ -526,7 +526,7 @@ export function addFeature(
 		// Polygons - Contours Regular
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'line', c, 'polygons');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'line', c, 'polygons');
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);
@@ -551,7 +551,7 @@ export function addFeature(
 		// Polygons - Corners as Circles
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'circle', c, 'polygons');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'circle', c, 'polygons');
 
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
@@ -578,7 +578,7 @@ export function addFeature(
 		// Polygons - Corners as Symbols
 		// --------------------------------------
 		((layerId) => {
-			map = addLayer(map, layerId, sourceId, groups, filterId, 'symbol', c, 'polygons');
+			map = addLayer(map, layerId, sourceId, groupNames, filterId, 'symbol', c, 'polygons');
 			// Execute Callbacks on relevant nodes
 			if (typeof collCallbacks == 'function') collCallbacks(map, layerId);
 			if (typeof collCallbacks?.all == 'function') collCallbacks.all(map, layerId);

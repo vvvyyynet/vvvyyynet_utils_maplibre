@@ -12,7 +12,7 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	}, {});
 }
 
-export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root) {
+export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, root) {
 	// ---------------------------------------------------------------------------------------
 	// CONSOLE LOGS
 	// console.log('ADDLAYER: ', layerId, type, root);
@@ -35,10 +35,10 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 			map = map.addLayer({
 				id: layerId,
 				type: 'circle',
-				source: sourceId,
 				metadata: {
-					groups: groups
+					'group:names': groupNames
 				},
+				source: sourceId,
 				layout: accumulateKeyValuePairs(
 					LP.circle.layout.map((prop) => {
 						console.log(prop.name, prop.camelCaseName, c(root, prop.camelCaseName, 'circle', {}));
@@ -63,7 +63,7 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				type: 'symbol',
 				source: sourceId,
 				metadata: {
-					groups: groups
+					'group:names': groupNames
 				},
 				layout: accumulateKeyValuePairs(
 					LP.symbol.layout.map((prop) => {
@@ -87,7 +87,7 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				type: 'line',
 				source: sourceId,
 				metadata: {
-					groups: groups
+					'group:names': groupNames
 				},
 
 				layout: accumulateKeyValuePairs(
@@ -112,7 +112,7 @@ export function addLayer(map, layerId, sourceId, groups, filterId, type, c, root
 				type: type,
 				source: sourceId,
 				metadata: {
-					groups: groups
+					'group:names': groupNames
 				},
 				layout: accumulateKeyValuePairs(
 					LP.fill.layout.map((prop) => {

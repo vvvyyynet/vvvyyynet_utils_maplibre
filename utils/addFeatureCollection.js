@@ -12,7 +12,7 @@ export function addFeatureCollection(
 		collStyleset = undefined,
 		presetStyleset = undefined,
 		featStylesetKey = 'style',
-		groups = undefined,
+		groupNames = undefined,
 		acceptTopLevelFeatureProps = undefined,
 		skipValidation = undefined
 	}
@@ -27,7 +27,7 @@ export function addFeatureCollection(
 	// - (collStyleset): Object-Array (default: undefined)
 	// - (presetStyleset): Object-Array (default: undefined)
 	// - (featStylesetKey): String (default: undefined)
-	// - (groups): Array of Strings (default: undefined) Used for toggling/filtering
+	// - (groupNames): Array of Strings (default: undefined) Used for toggling/filtering
 	// - (acceptTopLevelFeatureProps): boolean (default: undefined). If true, after searching for values in featStyleset it will also search in the first-level of feature.properties.
 	//
 	// Returns
@@ -104,7 +104,7 @@ export function addFeatureCollection(
 		// -------------------------------------------
 		// Add layer to map
 		({ map: map, idCollector: idCollector } = addFeature(map, feature, sourceId, layerId, {
-			groups,
+			groupNames,
 			idCollector: idCollector,
 			collCallbacks: collCallbacks,
 			collStyleset: collStyleset,
