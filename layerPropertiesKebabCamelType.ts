@@ -1,4 +1,53 @@
 export const layerProperties = {
+	layerProperties: {
+		id: {
+			name: 'id',
+			camelCaseName: 'id',
+			type: 'string'
+		},
+		type: {
+			name: 'type',
+			camelCaseName: 'type',
+			type: "'fill' | 'line' | 'symbol' | 'circle' | 'heatmap' | 'fill-extrusion' | 'raster' | 'hillshade' | 'background'"
+		},
+		metadata: {
+			name: 'metadata',
+			camelCaseName: 'metadata',
+			type: 'any' //! well, not quite
+		},
+		source: {
+			name: 'source',
+			camelCaseName: 'source',
+			type: 'string'
+		},
+		minzoom: {
+			name: 'minzoom',
+			camelCaseName: 'minzoom',
+			type: 'number',
+			range: { min: 0, max: 24 }
+		},
+		maxzoom: {
+			name: 'maxzoom',
+			camelCaseName: 'maxzoom',
+			type: 'number',
+			range: { min: 0, max: 24 }
+		},
+		filter: {
+			name: 'filter',
+			camelCaseName: 'filter',
+			type: 'any' //! well, not quite
+		},
+		layout: {
+			name: 'layout',
+			camelCaseName: 'layout',
+			type: 'any' //! well, not quite
+		},
+		paint: {
+			name: 'paint',
+			camelCaseName: 'paint',
+			type: 'any' //! well, not quite
+		}
+	},
 	background: {
 		layout: [
 			{
@@ -11,12 +60,12 @@ export const layerProperties = {
 			{
 				name: 'background-color',
 				camelCaseName: 'backgroundColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'background-pattern',
 				camelCaseName: 'backgroundPattern',
-				type: 'string | null'
+				type: 'string'
 			},
 			{
 				name: 'background-opacity',
@@ -54,12 +103,12 @@ export const layerProperties = {
 			{
 				name: 'fill-color',
 				camelCaseName: 'fillColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'fill-outline-color',
 				camelCaseName: 'fillOutlineColor',
-				type: 'string | null'
+				type: 'color'
 			},
 			{
 				name: 'fill-translate',
@@ -74,7 +123,7 @@ export const layerProperties = {
 			{
 				name: 'fill-pattern',
 				camelCaseName: 'fillPattern',
-				type: 'string | null'
+				type: 'string'
 			}
 		]
 	},
@@ -101,7 +150,7 @@ export const layerProperties = {
 			{
 				name: 'circle-color',
 				camelCaseName: 'circleColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'circle-blur',
@@ -144,7 +193,7 @@ export const layerProperties = {
 			{
 				name: 'circle-stroke-color',
 				camelCaseName: 'circleStrokeColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'circle-stroke-opacity',
@@ -183,7 +232,7 @@ export const layerProperties = {
 			{
 				name: 'heatmap-color',
 				camelCaseName: 'heatmapColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'heatmap-opacity',
@@ -211,7 +260,7 @@ export const layerProperties = {
 			{
 				name: 'fill-extrusion-color',
 				camelCaseName: 'fillExtrusionColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'fill-extrusion-translate',
@@ -226,7 +275,7 @@ export const layerProperties = {
 			{
 				name: 'fill-extrusion-pattern',
 				camelCaseName: 'fillExtrusionPattern',
-				type: 'string | null'
+				type: 'string'
 			},
 			{
 				name: 'fill-extrusion-height',
@@ -288,7 +337,7 @@ export const layerProperties = {
 			{
 				name: 'line-color',
 				camelCaseName: 'lineColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'line-translate',
@@ -331,7 +380,7 @@ export const layerProperties = {
 			{
 				name: 'line-pattern',
 				camelCaseName: 'linePattern',
-				type: 'string | null'
+				type: 'string'
 			},
 			{
 				name: 'line-gradient',
@@ -367,9 +416,7 @@ export const layerProperties = {
 				name: 'symbol-z-order',
 				camelCaseName: 'symbolZOrder',
 				type: "'auto' | 'viewport-y'"
-			}
-		],
-		paint: [
+			},
 			{
 				name: 'icon-allow-overlap',
 				camelCaseName: 'iconAllowOverlap',
@@ -574,6 +621,84 @@ export const layerProperties = {
 				camelCaseName: 'visibility',
 				type: "'visible' | 'none'"
 			}
+		],
+		paint: [
+			{
+				name: 'icon-opacity',
+				camelCaseName: 'iconOpacity',
+				type: 'number',
+				range: { min: 0, max: 45 }
+			},
+			{
+				name: 'icon-color',
+				camelCaseName: 'iconColor',
+				type: 'color'
+			},
+			{
+				name: 'icon-halo-color',
+				camelCaseName: 'iconHaloColor',
+				type: 'color'
+			},
+			{
+				name: 'icon-halo-width',
+				camelCaseName: 'iconHaloWidth',
+				type: 'number',
+				range: { min: 0 }
+			},
+			{
+				name: 'icon-halo-blur',
+				camelCaseName: 'iconHaloBlur',
+				type: 'number',
+				range: { min: 0 }
+			},
+			{
+				name: 'icon-translate',
+				camelCaseName: 'iconTranslate',
+				type: 'number[]'
+			},
+			{
+				name: 'icon-translate-anchor',
+				camelCaseName: 'iconTranslateAnchor',
+				type: "'map' | 'viewport'"
+			},
+			{
+				name: 'text-opacity',
+				camelCaseName: 'textOpacity',
+				type: 'number',
+				range: { min: 0, max: 1 }
+			},
+			{
+				name: 'text-color',
+				camelCaseName: 'textColor',
+				type: 'color'
+			},
+			{
+				name: 'text-halo-color',
+				camelCaseName: 'textHaloColor',
+				type: 'color'
+			},
+			{
+				name: 'text-halo-width',
+				camelCaseName: 'textHaloWidth',
+				type: 'number',
+				range: { min: 0 }
+			},
+			{
+				name: 'text-halo-blur',
+				camelCaseName: 'textHaloBlur',
+				type: 'number',
+				range: { min: 0 }
+			},
+			{
+				name: 'text-translate',
+				camelCaseName: 'textTranslate',
+				type: 'number[]'
+			},
+			{
+				name: 'text-translate-anchor',
+				camelCaseName: 'textTranslateAnchor',
+				type: "'map' | 'viewport'"
+			}
 		]
 	},
 	raster: {
@@ -662,17 +787,17 @@ export const layerProperties = {
 			{
 				name: 'hillshade-shadow-color',
 				camelCaseName: 'hillshadeShadowColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'hillshade-highlight-color',
 				camelCaseName: 'hillshadeHighlightColor',
-				type: 'string'
+				type: 'color'
 			},
 			{
 				name: 'hillshade-accent-color',
 				camelCaseName: 'hillshadeAccentColor',
-				type: 'string'
+				type: 'color'
 			}
 		]
 	}
