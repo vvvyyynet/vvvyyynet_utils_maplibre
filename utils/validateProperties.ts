@@ -3,18 +3,20 @@ type PropertySpec = {
 	name: string;
 	camelCaseName: string;
 	type: string;
-	range?: { min: number; max: number };
+	range?: { min?: number; max?: number };
 };
-
-// Enums for properties with specific known values
-const EVisibility = ['visible', 'none'] as const;
 
 import { layerProperties as styleSpec } from '../layerPropertiesKebabCamelType.ts';
 
-export function getValidValue<T>(layer: string, property: string, value: any): any {
-	// // Example usage:
-	// const validValue = getValidValue("circle", "circleRadius", 50);  // { circleRadius: 50 }
-	// const invalidValue = getValidValue("circle", "circleRadius", -1);  // null
+export function getValidValue(path: string, propertyName: string, value: any): any {
+	// Input variables
+	// path:string (multi-part paths must be '.' separated)
+	// propertyName:string (use camelCase)
+	// value:any
+
+	// Example usage:
+	// const validValue = getValidValue("circle.paint", "circleRadius", 50);  // { circleRadius: 50 }
+	// const invalidValue = getValidValue("circle.paint", "circleRadius", -1);  // null
 	// console.log(validValue);
 	// console.log(invalidValue);
 
@@ -23,32 +25,32 @@ export function getValidValue<T>(layer: string, property: string, value: any): a
 		return value;
 	}
 
-	// Find the property spec for the given layer.property
-	let propertySpec: PropertySpec | undefined;
-	for (const cat of ['layout', 'paint']) {
-		if (styleSpec?.[layer][cat]) {
-			propertySpec = styleSpec?.[layer][cat].find((p) => p.camelCaseName === property);
-			if (propertySpec) break;
-		} else {
-			// Return, if not found
-			console.error(
-				`Property "${property}" could not be found in "${layer}.layout" and "${layer}.paint".`
-			);
-			return null;
-		}
-	}
+  // Extract the nested propertyName using path.
+  const layerSpec:PropertySpec|undefined = path
+  .split('.')
+  .reduce((obj:any, key) => (obj ? obj[key] : undefined), styleSpec)
+  
+  // If the result is iterable, search for the specific camelCaseName
+  let propertySpec:PropertySpec|undefined
+  if (Array.isArray(layerSpec)) {
+    propertySpec = layerSpec.find((p: PropertySpec) => p.camelCaseName === propertyName)
+  }  
 
+	// Return, if propertyName is not found in the styleSpec under the given path
 	if (!propertySpec) {
-		console.error(
-			`Property "${property}" could not be found in "${layer}.layout" and "${layer}.paint".`
-		);
+		console.error(`Property "${propertyName}" could not be found in "${path}".`);
 		return null;
 	}
+
+	// ---------------------------------------------------------------------------------------------------------
+	// Invalidation Checks
+	// ---------------------------------------------------------------------------------------------------------
 	// ---------------------
 	// ARRAY OF STRINGS
-	// ---------------------
 	if (propertySpec.type === 'string[]') {
+		//
 		//! TODO
+		//
 		// ---------------------
 		// ANY STRING
 	} else if (propertySpec.type === 'string') {
@@ -74,7 +76,7 @@ export function getValidValue<T>(layer: string, property: string, value: any): a
 			})
 		) {
 			console.error(
-				`Value for "${property}" must be of type "${propertySpec.type}", found '${value}'`
+				`Value for "${propertyName}" must be of type "${propertySpec.type}", found '${value}'`
 			);
 			return null;
 		}
@@ -90,29 +92,36 @@ export function getValidValue<T>(layer: string, property: string, value: any): a
 		// Invalidate range
 		if (propertySpec.range) {
 			if (propertySpec.range.min !== undefined && value < propertySpec.range.min) {
-				console.error(`Value for "${property}" must be >= ${propertySpec.range.min}.`);
+				console.error(`Value for "${propertyName}" must be >= ${propertySpec.range.min}.`);
 				return null;
 			}
 			if (propertySpec.range.max !== undefined && value > propertySpec.range.max) {
-				console.error(`Value for "${property}" must be <= ${propertySpec.range.max}.`);
+				console.error(`Value for "${propertyName}" must be <= ${propertySpec.range.max}.`);
 				return null;
 			}
 		}
 
 		// ---------------------
 		// BOOLEANS
-		// ---------------------
 	} else if (propertySpec.type === 'boolean') {
+		//
+		//! TODO
+		//
 		// ---------------------
 		// COLORS
-		// ---------------------
 	} else if (propertySpec.type === 'color') {
+		//
 		//! TODO
+		//
 	} else {
+		//
 		//! TODO some error
+		//
 		return null;
 	}
 
+	// ---------------------------------------------------------------------------------------------------------
 	// Return the validated value (since all invalidation attempts failed)
+	// ---------------------------------------------------------------------------------------------------------
 	return value;
 }

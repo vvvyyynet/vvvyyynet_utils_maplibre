@@ -45,12 +45,12 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				filter: ['==', ['get', 'id'], filterId],
 				layout: accumulateKeyValuePairs(
 					LP.circle.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'circle.layout', {})];
 					})
 				),
 				paint: accumulateKeyValuePairs(
 					LP.circle.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'circle', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'circle.paint', {})];
 					})
 				)
 			});
@@ -73,12 +73,12 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				filter: ['==', ['get', 'id'], filterId],
 				layout: accumulateKeyValuePairs(
 					LP.symbol.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'symbol', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'symbol.layout', {})];
 					})
 				),
 				paint: accumulateKeyValuePairs(
 					LP.symbol.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'symbol', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'symbol.paint', {})];
 					})
 				)
 			});
@@ -101,12 +101,12 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				filter: ['==', ['get', 'id'], filterId],
 				layout: accumulateKeyValuePairs(
 					LP.line.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'line', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'line.layout', {})];
 					})
 				),
 				paint: accumulateKeyValuePairs(
 					LP.line.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'line', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'line.paint', {})];
 					})
 				)
 			});
@@ -129,12 +129,12 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 				filter: ['==', ['get', 'id'], filterId],
 				layout: accumulateKeyValuePairs(
 					LP.fill.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'fill.layout', {})];
 					})
 				),
 				paint: accumulateKeyValuePairs(
 					LP.fill.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'fill', {})];
+						return [prop.name, c(root, prop.camelCaseName, 'fill.paint', {})];
 					})
 				)
 			});

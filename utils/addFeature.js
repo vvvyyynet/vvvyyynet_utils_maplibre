@@ -73,7 +73,7 @@ function coalesce(
 	presetStyleset,
 	root,
 	camelCaseName,
-	type,
+	propPath,
 	acceptTopLevelFeatureProps,
 	{ skipValidation = false }
 ) {
@@ -99,11 +99,15 @@ function coalesce(
 	const val5 = getNestedProperty(presetStyleset, path);
 
 	// validation
-	const validVal1 = validationFunction(type, camelCaseName, val1);
-	const validVal2 = validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path));
-	const validVal3 = validationFunction(type, camelCaseName, val3); // last element
-	const validVal4 = validationFunction(type, camelCaseName, val4);
-	const validVal5 = validationFunction(type, camelCaseName, val5);
+	const validVal1 = validationFunction(propPath, camelCaseName, val1);
+	const validVal2 = validationFunction(
+		propPath,
+		camelCaseName,
+		getNestedProperty(featStyleset, path)
+	);
+	const validVal3 = validationFunction(propPath, camelCaseName, val3); // last element
+	const validVal4 = validationFunction(propPath, camelCaseName, val4);
+	const validVal5 = validationFunction(propPath, camelCaseName, val5);
 
 	// coalescing
 	const returnvalue =
@@ -128,13 +132,17 @@ function coalesce(
 
 	// Fast version (will stop calculating as soon as non-nullish value is found)
 	return (
-		validationFunction(type, camelCaseName, getNestedProperty(collStyleset, forcePath)) ??
-		validationFunction(type, camelCaseName, getNestedProperty(featStyleset, path)) ??
+		validationFunction(propPath, camelCaseName, getNestedProperty(collStyleset, forcePath)) ??
+		validationFunction(propPath, camelCaseName, getNestedProperty(featStyleset, path)) ??
 		(acceptTopLevelFeatureProps
-			? validationFunction(type, camelCaseName, getNestedProperty(featProps, path.split('.').pop()))
+			? validationFunction(
+					propPath,
+					camelCaseName,
+					getNestedProperty(featProps, path.split('.').pop())
+			  )
 			: undefined) ??
-		validationFunction(type, camelCaseName, getNestedProperty(collStyleset, path)) ??
-		validationFunction(type, camelCaseName, getNestedProperty(presetStyleset, path))
+		validationFunction(propPath, camelCaseName, getNestedProperty(collStyleset, path)) ??
+		validationFunction(propPath, camelCaseName, getNestedProperty(presetStyleset, path))
 	);
 }
 
@@ -268,7 +276,7 @@ export function addFeature(
 	// RE-DEFINE COALESCE FUNCTION
 	// console.log('SKIPVALIDATION (addFeature): ', skipValidation);
 	// like so c(path) only requires path, whereas the other function arguments are taken from addFeature's arguments
-	function c(root, camelCaseName, type, { skipValidation = undefined }) {
+	function c(root, camelCaseName, propPath, { skipValidation = undefined }) {
 		// console.log('SKIPVALIDATION (c): ', skipValidation);
 		return coalesce(
 			feature?.properties,
@@ -277,7 +285,7 @@ export function addFeature(
 			presetStyleset,
 			root,
 			camelCaseName,
-			type,
+			propPath,
 			acceptTopLevelFeatureProps,
 			{ skipValidation: skipValidation }
 		);
