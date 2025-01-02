@@ -29,7 +29,7 @@ function setAtPath(object, path, value) {
 	}, object);
 }
 
-export function pushToPath(object, path, value) {
+function pushToPath(object, path, value) {
 	return path.split('.').reduce((acc, key, idx, arr) => {
 		// Case 1: If it's the final key (end of the path)
 		if (idx === arr.length - 1) {
@@ -87,7 +87,7 @@ function coalesce(
 		console.warn('Will skip validation');
 		validationFunction = justPassOnValue;
 	} else {
-		// console.warn('Will validate');
+		console.warn('Will validate');
 		validationFunction = getValidValue;
 	}
 
@@ -118,7 +118,7 @@ function coalesce(
 		validVal5;
 
 	// Output
-	if (path.split('.').pop() == 'circleTranslateAnchor') {
+	if (path.split('.').pop() == 'lineWidth') {
 		// if (true) {
 		console.log('PATH: ', path);
 		console.log('RETURN VALUE: ', returnvalue);
@@ -276,7 +276,7 @@ export function addFeature(
 	// RE-DEFINE COALESCE FUNCTION
 	// console.log('SKIPVALIDATION (addFeature): ', skipValidation);
 	// like so c(path) only requires path, whereas the other function arguments are taken from addFeature's arguments
-	function c(root, camelCaseName, propPath, { skipValidation = undefined }) {
+	function c(root, camelCaseName, propPath, { forceSkipValidation = undefined }) {
 		// console.log('SKIPVALIDATION (c): ', skipValidation);
 		return coalesce(
 			feature?.properties,
@@ -287,7 +287,7 @@ export function addFeature(
 			camelCaseName,
 			propPath,
 			acceptTopLevelFeatureProps,
-			{ skipValidation: skipValidation }
+			{ skipValidation: forceSkipValidation != undefined ? forceSkipValidation : skipValidation }
 		);
 	}
 
@@ -300,7 +300,7 @@ export function addFeature(
 		// --------------------------------------
 		// Points - Points as Circles
 		// --------------------------------------
-		if (c('points', 'addCircles', null, { skipValidation: true })) {
+		if (c('points', 'addCircles', null, { forceSkipValidation: true })) {
 			((layerId) => {
 				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'circle', c, 'points');
 
@@ -322,7 +322,7 @@ export function addFeature(
 		// --------------------------------------
 		// Points - Points as Symbols (Backdrops)
 		// --------------------------------------
-		if (c('points', 'addBackdropCircles', null, { skipValidation: true })) {
+		if (c('points', 'addBackdropCircles', null, { forceSkipValidation: true })) {
 			((layerId) => {
 				map = addLayer(
 					map,
@@ -354,7 +354,7 @@ export function addFeature(
 		// --------------------------------------
 		// Points - Points as Symbols
 		// --------------------------------------
-		if (c('points', 'addSymbols', null, { skipValidation: true })) {
+		if (c('points', 'addSymbols', null, { forceSkipValidation: true })) {
 			((layerId) => {
 				map = addLayer(map, layerId, sourceId, groupNames, filterId, 'symbol', c, 'points');
 				// Execute Callbacks on relevant nodes
@@ -379,7 +379,7 @@ export function addFeature(
 		// --------------------------------------
 		// Lines - Glow Lines
 		// --------------------------------------
-		if (c('lines', 'addGlow', null, { skipValidation: true })) {
+		if (c('lines', 'addGlow', null, { forceSkipValidation: true })) {
 			// Tweak lineWidth for glow in all stylesets
 			collStyleset = tweakGlowStyle(collStyleset, 'lines');
 			collStyleset.force = tweakGlowStyle(collStyleset.force, 'lines');
@@ -508,7 +508,7 @@ export function addFeature(
 		// --------------------------------------
 		// Polygons - Contours Glow
 		// --------------------------------------
-		if (c('polygons', 'addGlow', null, { skipValidation: true })) {
+		if (c('polygons', 'addGlow', null, { forceSkipValidation: true })) {
 			// Tweak lineWidth for glow in all stylesets
 			collStyleset = tweakGlowStyle(collStyleset, 'polygons');
 			collStyleset.force = tweakGlowStyle(collStyleset.force, 'polygons');

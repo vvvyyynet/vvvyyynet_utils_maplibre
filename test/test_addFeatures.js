@@ -166,7 +166,7 @@ export function test_addFeatures(map) {
 		collStyleset: collStyleset,
 		presetStyleset: styleset,
 		featStylesetKey: 'style',
-		skipValidation: false
+		skipValidation: true
 	}));
 
 	console.log(idCollector);

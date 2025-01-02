@@ -41,6 +41,8 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - fix: all //! and //!TODO and //! TODO etc.
 
 ### Fixes
+- *fix: skipValidation does not work??
+- *fix: validation kills expressions.
 - *fix: color-type in stylespec is sometimes a string, sometimes nothing, but it should be... well... what?
 - fix: throw warning/error on invalid/misspelled property-names and property-values before moving on to fallbacks during coalesce.
 	(the maplibre-error is e.g.: "Error: layers.myLayerId.paint.line-color: color expected, "blaack" found")
