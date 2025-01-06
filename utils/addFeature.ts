@@ -18,11 +18,11 @@ function justPassOnValue(type, camelCaseName, value) {
 	return value;
 }
 
-// Execute Callbacks on relevant nodes
+// Execute Callbacks on relevant nodes (provide map and layerId for the callback)
 function executeCallbacks(collCallbacks, map, layerId, paths: string[]) {
 	paths.forEach((path) => {
-		const fun = typeof getNested(collCallbacks, path);
-		if (fun === 'function') fun(map, layerId);
+		const fun = getNested(collCallbacks, path);
+		if (typeof fun === 'function') fun(map, layerId);
 	});
 }
 
