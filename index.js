@@ -27,6 +27,7 @@ import { addFeatureCollection } from './utils/addFeatureCollection'; //! NEW
 import { addFeature } from './utils/addFeature'; //!NEW (helper)
 import { addLayer } from './utils/addLayer'; //!NEW (helper)
 import { makeLayerInteractive } from './utils/makeLayerInteractive'; //!NEW (helper)
+import { tweakGlowStyle } from './utils/tweakGlowStyle'; //!NEW (helper)
 
 //----------------------------------------------
 // Add Georeferenced Images to Map
@@ -66,6 +67,7 @@ import { addStaticFeatures } from './utils/addStaticFeatures';
 // ----------
 // Export
 export {
+	tweakGlowStyle,
 	test_addFeatures,
 	test_getValidValue,
 	drawHardcodedFeatures,

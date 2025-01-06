@@ -11,10 +11,10 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	}, {});
 }
 
-export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, root) {
+export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, stylesetPath) {
 	// ---------------------------------------------------------------------------------------
 	// CONSOLE LOGS
-	// console.log('ADDLAYER: ', layerId, type, root);
+	// console.log('ADDLAYER: ', layerId, type, stylesetPath);
 
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
@@ -26,120 +26,31 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// ADD LAYER BASED ON TYPE
-	switch (type) {
-		// -----------------------------------------------------
-		// CIRCLE
-		case 'circle':
-			map = map.addLayer({
-				id: layerId,
-				type: 'circle',
-				metadata: {
-					'group:names': groupNames
-				},
-				source: sourceId,
-				...accumulateKeyValuePairs(
-					[['minzoom', c(root, 'minZoom', 'circle', {})]],
-					[['maxzoom', c(root, 'maxZoom', 'circle', {})]]
-				),
-				filter: ['==', ['get', 'id'], filterId],
-				layout: accumulateKeyValuePairs(
-					LP.circle.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'circle.layout', {})];
-					})
-				),
-				paint: accumulateKeyValuePairs(
-					LP.circle.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'circle.paint', {})];
-					})
-				)
-			});
-			break;
-
-		// -----------------------------------------------------
-		// SYMBOL
-		case 'symbol':
-			map = map.addLayer({
-				id: layerId,
-				type: 'symbol',
-				metadata: {
-					'group:names': groupNames
-				},
-				source: sourceId,
-				...accumulateKeyValuePairs(
-					[['minzoom', c(root, 'minZoom', 'symbol', {})]],
-					[['maxzoom', c(root, 'maxZoom', 'symbol', {})]]
-				),
-				filter: ['==', ['get', 'id'], filterId],
-				layout: accumulateKeyValuePairs(
-					LP.symbol.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'symbol.layout', {})];
-					})
-				),
-				paint: accumulateKeyValuePairs(
-					LP.symbol.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'symbol.paint', {})];
-					})
-				)
-			});
-			break;
-
-		// -----------------------------------------------------
-		// LINE
-		case 'line':
-			map = map.addLayer({
-				id: layerId,
-				type: 'line',
-				metadata: {
-					'group:names': groupNames
-				},
-				source: sourceId,
-				...accumulateKeyValuePairs(
-					[['minzoom', c(root, 'minZoom', 'line', {})]],
-					[['maxzoom', c(root, 'maxZoom', 'line', {})]]
-				),
-				filter: ['==', ['get', 'id'], filterId],
-				layout: accumulateKeyValuePairs(
-					LP.line.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'line.layout', {})];
-					})
-				),
-				paint: accumulateKeyValuePairs(
-					LP.line.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'line.paint', {})];
-					})
-				)
-			});
-			break;
-
-		// -----------------------------------------------------
-		// FILL
-		case 'fill':
-			map = map.addLayer({
-				id: layerId,
-				type: type,
-				metadata: {
-					'group:names': groupNames
-				},
-				source: sourceId,
-				...accumulateKeyValuePairs(
-					[['minzoom', c(root, 'minZoom', 'fill', {})]],
-					[['maxzoom', c(root, 'maxZoom', 'fill', {})]]
-				),
-				filter: ['==', ['get', 'id'], filterId],
-				layout: accumulateKeyValuePairs(
-					LP.fill.layout.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'fill.layout', {})];
-					})
-				),
-				paint: accumulateKeyValuePairs(
-					LP.fill.paint.map((prop) => {
-						return [prop.name, c(root, prop.camelCaseName, 'fill.paint', {})];
-					})
-				)
-			});
-			break;
+	// ADD LAYER
+	if (['fill', 'circle', 'line', 'circle'].includes(type)) {
+		map = map.addLayer({
+			id: layerId,
+			type: type,
+			metadata: {
+				'group:names': groupNames
+			},
+			source: sourceId,
+			...accumulateKeyValuePairs(
+				[['minzoom', c(stylesetPath, 'minZoom', type, {})]],
+				[['maxzoom', c(stylesetPath, 'maxZoom', type, {})]]
+			),
+			filter: ['==', ['get', 'id'], filterId],
+			layout: accumulateKeyValuePairs(
+				LP[type].layout.map((prop) => {
+					return [prop.name, c(stylesetPath, prop.camelCaseName, `${type}.layout`, {})];
+				})
+			),
+			paint: accumulateKeyValuePairs(
+				LP[type].paint.map((prop) => {
+					return [prop.name, c(stylesetPath, prop.camelCaseName, `${type}.paint`, {})];
+				})
+			)
+		});
 	}
-
 	return map;
 }

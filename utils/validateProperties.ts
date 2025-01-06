@@ -25,22 +25,27 @@ export function getValidValue(path: string, propertyName: string, value: any): a
 		return value;
 	}
 
-  // Extract the nested propertyName using path.
-  const layerSpec:PropertySpec|undefined = path
-  .split('.')
-  .reduce((obj:any, key) => (obj ? obj[key] : undefined), styleSpec)
-  
-  // If the result is iterable, search for the specific camelCaseName
-  let propertySpec:PropertySpec|undefined
-  if (Array.isArray(layerSpec)) {
-    propertySpec = layerSpec.find((p: PropertySpec) => p.camelCaseName === propertyName)
-  }  
+	// export const function getPropertySpec(path, propertyName){
 
-	// Return, if propertyName is not found in the styleSpec under the given path
-	if (!propertySpec) {
-		console.error(`Property "${propertyName}" could not be found in "${path}".`);
-		return null;
-	}
+		// Extract the nested propertyName using path.
+		const layerSpec:PropertySpec|undefined = path
+		.split('.')
+		.reduce((obj:any, key) => (obj ? obj[key] : undefined), styleSpec)
+		
+		// If the result is iterable, search for the specific camelCaseName
+		let propertySpec:PropertySpec|undefined
+		if (Array.isArray(layerSpec)) {
+			propertySpec = layerSpec.find((p: PropertySpec) => p.camelCaseName === propertyName)
+		}
+		
+		// Return, if propertyName is not found in the styleSpec under the given path
+		if (!propertySpec) {
+			console.error(`Property "${propertyName}" could not be found in "${path}".`);
+			return null;
+		} else {
+			return propertySpec
+		}
+	// }
 
 	// ---------------------------------------------------------------------------------------------------------
 	// Invalidation Checks
@@ -48,9 +53,9 @@ export function getValidValue(path: string, propertyName: string, value: any): a
 	// ---------------------
 	// ARRAY OF STRINGS
 	if (propertySpec.type === 'string[]') {
-		//
+		// 
 		//! TODO
-		//
+		// 
 		// ---------------------
 		// ANY STRING
 	} else if (propertySpec.type === 'string') {

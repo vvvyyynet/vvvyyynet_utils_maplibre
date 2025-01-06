@@ -41,9 +41,6 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 - fix: all //! and //!TODO and //! TODO etc.
 
 ### Fixes
-- *fix: skipValidation does not work??
-- *fix: validation kills expressions.
-- *fix: color-type in stylespec is sometimes a string, sometimes nothing, but it should be... well... what?
 - fix: throw warning/error on invalid/misspelled property-names and property-values before moving on to fallbacks during coalesce.
 	(the maplibre-error is e.g.: "Error: layers.myLayerId.paint.line-color: color expected, "blaack" found")
 - fix: if interactive-callback is set both on polygon-fill and polygon-contour, moving the cursor from the line further on the fill the cursor somehow switches back from pointer to normal... so I guess, interaction is not accessible (did not test with propper popups yet). However, this is a rare case, and if you move quickly over the contour inside the polygon, it will still work.
@@ -68,6 +65,8 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 	- coalescion of object-version should only happen on the outside, i.e. on the object as a whole
 - *feat: add typescript support
 
+- feat: Migrate to maplibre's internal validation function since mine kills expressions.
+	- find a way to validate special values
 - feat: allow also "feature-state" expression (relevant in the tweaking for lineGlow)
 - feat: consider adding coalesce also for filter?!
 - feat: consider merging metadata from different stylesets... but it's not style... just two sources then: feat + coll (and maybe db and manual, but I think this needs be handled externally.)
@@ -76,15 +75,20 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
   - However, I have tested it, and the value will just be NaN, but the expression-array survives, which is not that bad news either. It just needs to be documented as a limitation.
 - feat: add featStyleset support on the collection-level (may require renaming of collStyleset, which refers to the manual part, which for now is the only global one (appart from the presetStyleset) -- maybe into manipStyleset)
 - feat: add typing for addGlow, addBackdrop, addCircle, addSymbol (but in a seperate stylespec. reference types from maplibre-stylespec instead of duplicating! 
-- feat: consider using maplibre's internal validation function (I think there is one)... although: special values may be a reason NOT to migrat to internal validation later.
 - feat: find solution for `GeometryCollection` maybe, this should sort of recall the function?!
 
 ### Chore and Refactor
+
+As soon as there is no path needed anymore (since it is only type (+ev. force)), camelCaseName is only for validation and can be merged with validationPropPath again!
+
+- *chore: consider logic-change of `stylesetPath` (as soon as flattened).
 - *chore: should I move away from camelCase completely? What does it serve, except larger bundle size for having two stylespec names now?
 	- if so, change logic inside `getValidValue()` and stylespec by nesting type and range directly inside kebabName.
 - *chore: simplify names of `idColl` and `callback` using circle, line, fill, symbol, ... + specials
   - consider prefixing values with GlowLineColor or BackdropCircleRadius (requires extending the stylespecs (does it for callbacks and ids??) or using aliases, which is ugly) 
 	- I guess it's best to just use 1-level-nesting instead of prefixing, since inside addLayer a circle and a backdropcircle are treated just the same! It's just the external bookkeeping that relies on separation, so nesting will do it.
+- *chore: unsure about add... properties... should I introduce them at all? How to handle defaults? e.g. for a polygon, will it check for contourline or fill as well? how to reason decision?
+- *chore: move backgroundcircle and glow entierly to callback (which must be called before adding for tweaking (maybe make two callbacks pre/after!)
 
 - chore: rename plural/singular mess
 - chore: check all == and === as well as != and !== for correctness
@@ -100,7 +104,8 @@ import { addFeatureCollection } from 'vvvyyynet_utils_maplibre';
 
 ### Regarding Maplibre-Stylespec
 - type of icon-translate is number[] and must be of length===2, but the spec just sais "array"... why??
-
+- why are maxzoom and minzoom on the layer-level, while visibility is on a layout level?
+- Documentation should include guidance on how to use their validation for own tools (e.g. in my coalesce-situation). It needs a lot of code digging to find out, what the validation functions do.
 
 ### Historical (I guess this is solved?)
 - fix: array-syntax won't work when mixed with e.g. lineWidth
