@@ -11,10 +11,10 @@ function accumulateKeyValuePairs(keyvaluepairs) {
 	}, {});
 }
 
-export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, stylesetPath) {
+export function addLayer(map, layerId, sourceId, groupNames, filterId, layerType, c, stylesetPath) {
 	// ---------------------------------------------------------------------------------------
 	// CONSOLE LOGS
-	// console.log('ADDLAYER: ', layerId, type, stylesetPath);
+	// console.log('ADDLAYER: ', layerId, layerType, stylesetPath);
 
 	// ---------------------------------------------------------------------------------------
 	// CHECKS
@@ -27,27 +27,39 @@ export function addLayer(map, layerId, sourceId, groupNames, filterId, type, c, 
 
 	// ---------------------------------------------------------------------------------------
 	// ADD LAYER
-	if (['fill', 'circle', 'line', 'circle'].includes(type)) {
+	if (
+		[
+			'fill',
+			'circle',
+			'line',
+			'symbol'
+			// 'heatmap',
+			// 'fill-extrusion',
+			// 'raster',
+			// 'hillshade',
+			// 'background'
+		].includes(layerType)
+	) {
 		map = map.addLayer({
 			id: layerId,
-			type: type,
+			type: layerType,
 			metadata: {
 				'group:names': groupNames
 			},
 			source: sourceId,
 			...accumulateKeyValuePairs(
-				[['minzoom', c(stylesetPath, 'minZoom', type, {})]],
-				[['maxzoom', c(stylesetPath, 'maxZoom', type, {})]]
+				[['minzoom', c(stylesetPath, 'minzoom', layerType, {})]],
+				[['maxzoom', c(stylesetPath, 'maxzoom', layerType, {})]]
 			),
 			filter: ['==', ['get', 'id'], filterId],
 			layout: accumulateKeyValuePairs(
-				LP[type].layout.map((prop) => {
-					return [prop.name, c(stylesetPath, prop.camelCaseName, `${type}.layout`, {})];
+				LP[layerType].layout.map((prop) => {
+					return [prop.name, c(stylesetPath, prop.camelCaseName, `${layerType}.layout`, {})];
 				})
 			),
 			paint: accumulateKeyValuePairs(
-				LP[type].paint.map((prop) => {
-					return [prop.name, c(stylesetPath, prop.camelCaseName, `${type}.paint`, {})];
+				LP[layerType].paint.map((prop) => {
+					return [prop.name, c(stylesetPath, prop.camelCaseName, `${layerType}.paint`, {})];
 				})
 			)
 		});

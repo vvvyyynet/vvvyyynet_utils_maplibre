@@ -1,6 +1,9 @@
 import { addFeatureCollection } from '../utils/addFeatureCollection';
 import { styleset } from './DEFAULT_STYLES';
 import { makeLayerInteractive } from '../utils/makeLayerInteractive';
+import { addBackdropCallback } from '../utils/addBackdropCallback';
+import { addGlowCallback } from '../utils/addGlowCallback';
+import { addGlowCallback2 } from '../utils/addGlowCallback';
 
 export function test_addFeatures(map) {
 	const FeatColl = {
@@ -12,6 +15,7 @@ export function test_addFeatures(map) {
 				geometry: { type: 'Point', coordinates: [7.042569, 46.881066] },
 				properties: {
 					circleColor: 'yellow',
+					specialColor: 'orange',
 					id: '49f56x10831cs7p',
 					name: 'Römisches Amphitheater Aventicum',
 					temperature: 100,
@@ -32,7 +36,9 @@ export function test_addFeatures(map) {
 					coordinates: [
 						[7.042569, 46.881066],
 						[8.7933439, 46.1678596],
-						[6.9762993, 46.3150334]
+						[6.9762993, 46.3150334],
+						[6.2, 46.7],
+						[6.1, 46.3]
 					]
 				}
 			},
@@ -83,7 +89,7 @@ export function test_addFeatures(map) {
 			},
 			{
 				type: 'Feature',
-				properties: { id: 'foo' },
+				properties: { id: 'foo', circleRadius: 20, circleColor: 'green'},
 				geometry: {
 					coordinates: [6.814925764335101, 46.88522781547138],
 					type: 'Point'
@@ -95,64 +101,93 @@ export function test_addFeatures(map) {
 	// STYLESHEET
 	const collStyleset = {
 		force: {
-			points: { addSymbols: true, addBackdropCircles: true, iconName: 'dot' },
+			points: {
+				minzoom: 6,
+				maxzoom: 9,
+				// circleRadius: 40,
+				// circleColor: 'orange',
+				iconImage: 'butterfly',
+				iconSize: ['interpolate', ['linear'], ['zoom'], 7, 0.01, 24, 0.05],
+				addSymbolBackdrop: true,
+				symbolBackdrop:{
+					circleRadius: ['interpolate', ['linear'], ['zoom'], 7, 20, 24, 100],
+					circleColor: 'white',
+					circleStrokeWidth: 3,
+					circleStrokeColor: 'yellow'
+				},
+				circleRadius: 40,
+				circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
+			},
 			lines: {
+				minzoom: 6,
+				maxzoom: 9,
 				lineDashArray: [4, 4],
 				lineCap: 'round',
 				lineJoin: 'round',
 				lineColor: 'black',
-				addGlow: true,
 				lineWidth: ['interpolate', ['linear'], ['zoom'], 0, 20, 10, 5, 20, 900],
-				glow: {
+				// lineWidth: 20,
+				addLineGlow: true,
+				lineGlow: {
 					lineWidthGlowFactor: 1.6,
+					// lineWidth: 30,
 					lineColor: 'red',
 					// lineCap: 'round',
 					lineBlur: 5,
 					lineDashArray: [2, 2]
-				}
+				},
+				addSymbolBackdrop: true,
+				symbolBackdrop:{
+					circleRadius: 20,
+					circleColor: 'orange',
+					circleStrokeWidth: 3,
+					circleStrokeColor: 'red'
+				},
 			},
 			polygons: {
 				fillColor: ['coalesce', ['string', ['get', 'mycolor']], ['rgb', 255, 200, 0]],
-				fillOpacity: 0
+				fillOpacity: 0,
+				lineWidth: 7,
+				lineColor: 'black',
+				addLineGlow: true,
+				lineGlow: {
+					lineWidth: 12,
+					lineColor: 'yellow'
+				},
+				addSymbolBackdrop: true,
+				symbolBackdrop:{
+					circleRadius: 10,
+					circleColor: 'blue',
+					circleStrokeWidth: 3,
+					circleStrokeColor: 'purple'
+				},
 			}
 		},
-		points: {
-			// addCircles: true,
-			addCircles: true,
-			circleTranslateAnchor: "viewport", //!DEBUG validation here
-			circleSortKey: 1,
-			circleRadius: 25,
-			circleColor: ['rgb', ['get', 'temperature'], 0, ['-', 100, ['get', 'temperature']]]
-		},
+		points: {},
 		lines: {},
 		polygons: {}
 	};
 
 	// CALLBACKS
 	const collCallbacks = {
-		// all: 
-		// 	(map, layerId) => {
-		// 		console.log('CALLING BACK from layer: ', layerId);
-		// 		makeLayerInteractive(map, layerId);
-		// 	},
-		// points: {
-		// all: (map, layerId) => {
-		// 	console.log('CALLING BACK from layer: ', layerId);
-		// 	makeLayerInteractive(map, layerId);
-		// }
-		// },
-		// lines: {
-		// 	corners: (map, layerId) => {
-		// 		console.log('CALLING BACK from layer: ', layerId);
-		// 		makeLayerInteractive(map, layerId);
-		// 	}
-		// },
-		// polygons: {
-		// 	all: (map, layerId) => {
-		// 		console.log('CALLING BACK from layer: ', layerId);
-		// 		makeLayerInteractive(map, layerId);
-		// 	}
-		// }
+		all: {
+			// pre: addGlowCallback2({suffix: 'glowww'}),
+			// pre: makeLayerInteractive
+			// pre: addGlowCallback
+			// pre: addBackdropCallback
+			// post: ()=>{console.log('HI THERE POST')}
+			pre: addBackdropCallback
+		},
+		points: {
+			// pre: addBackdropCallback
+		},
+		lines: {
+			pre: addGlowCallback
+		},
+		polygons: {
+		pre: addGlowCallback
+
+		}
 	};
 
 	// Add Features
@@ -160,7 +195,7 @@ export function test_addFeatures(map) {
 	({ map: map, idCollector: idCollector } = addFeatureCollection(map, FeatColl, {
 		id: 'test',
 		idCollector: {},
-		sortByTypesArray: ['points', 'lines', 'polygons'],
+		// sortByTypesArray: ['polygons', 'lines','points'],
 		acceptTopLevelFeatureProps: false,
 		collCallbacks: collCallbacks,
 		collStyleset: collStyleset,

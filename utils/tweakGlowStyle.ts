@@ -5,11 +5,23 @@ export function tweakGlowStyle(styleset, type) {
 	// Input: type = 'lines' or 'polygons'
 
 	// ----------------------
+	// minzoom and maxzoom
+	// ----------------------
+	// If glow.minzoom (glow.maxzoom) is unset, make sure it has the same value as the regular line.
+	if (styleset?.[type] && !styleset?.[type]?.glow?.minzoom) {
+		//!! (testing for styleset?.[type]) is important, if styleset={})
+		setNested(styleset?.[type], 'glow.minzoom', styleset?.[type]?.minzoom);
+	}
+	if (styleset?.[type] && !styleset?.[type]?.glow?.maxzoom) {
+		setNested(styleset?.[type], 'glow.maxzoom', styleset?.[type]?.maxzoom);
+	}
+
+	// ----------------------
 	// lineCap and lineJoin
 	// ----------------------
-	// If glow.lineCap (glow.lineJoin) is unset, make sure they have the same value as the regular line.
+	// If glow.lineCap (glow.lineJoin) is unset, make sure it has the same value as the regular line.
 	if (styleset?.[type] && !styleset?.[type]?.glow?.lineJoin) {
-		// (testing for styleset?.[type]) is important, if styleset={})
+		//!! (testing for styleset?.[type]) is important, if styleset={})
 		setNested(styleset?.[type], 'glow.lineJoin', styleset?.[type]?.lineJoin);
 	}
 	if (styleset?.[type] && !styleset?.[type]?.glow?.lineCap) {

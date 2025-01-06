@@ -30,7 +30,17 @@ map.addLayer({
   source: 'mypoints',
   paint: {
     'circle-radius': 12,
-    'circle-color': '#FF0000'
+    'circle-color': '#FF0000',
   }
+});
+
+map.addLayer({
+  id: 'mypoints_icons',
+  type: 'symbol',
+  source: 'mypoints',
+  layout:{
+  'icon-image': 'butterfly',
+  'icon-size': 0.04
+  },
 });
 }

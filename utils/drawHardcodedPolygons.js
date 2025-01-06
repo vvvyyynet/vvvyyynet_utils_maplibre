@@ -36,7 +36,7 @@ export function drawHardcodedPolygons(map) {
 		type: 'line',
 		source: 'mypolygons',
 		paint: {
-			'line-color': 'blaack',
+			'line-color': 'black',
       'line-width': 2,
 			'line-opacity': 0.5
 		}

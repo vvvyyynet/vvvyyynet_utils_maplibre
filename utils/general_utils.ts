@@ -22,6 +22,13 @@ export function setNested(base: any, path: string, value: any) {
 }
 
 export function pushToNested(base: any, path: string, value: any) {
+	// Skip if base is undefined
+	// if (base === undefined) {
+	// 	console.warn(`Cannot push ${value} to base.${path} because base is undefined`);
+	// 	return base;
+	// }
+
+	// Push value to base.[...path]
 	return path.split('.').reduce((accObject, key, idx, arr) => {
 		// Case 1: If it's the final key (end of the path)
 		if (idx === arr.length - 1) {
